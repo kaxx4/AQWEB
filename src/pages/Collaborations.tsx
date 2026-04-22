@@ -5,84 +5,27 @@ import Nav from '../components/Nav'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
 
-interface CollabEntry {
-  name: string
-  type: string
-  description: string
-  driveCount?: number
-  color: string
-  accent: string
-  icon: string
+interface CollabPartner {
+  collab_name: string
+  collab_logo: string | null
+  collab_logo_alt: string | null
+  projectCount: number
 }
 
-const staticCollabs: CollabEntry[] = [
-  {
-    name: 'Calcutta Rescue',
-    type: 'Healthcare Partner',
-    description: 'Joint outreach drives bringing free medical care to underserved communities across Kolkata.',
-    color: 'rgba(84,209,134,0.08)',
-    accent: '#54d186',
-    icon: '🏥',
-  },
-  {
-    name: 'Prani',
-    type: 'Animal Welfare',
-    description: 'Co-hosted dog-feeding and street animal care drives across South Kolkata.',
-    color: 'rgba(76,184,212,0.08)',
-    accent: '#4cb8d4',
-    icon: '🐾',
-  },
-  {
-    name: 'Sundarbans Conservation Trust',
-    type: 'Environment',
-    description: 'Annual mangrove plantation and relief drives in the Sundarbans delta since 2022.',
-    color: 'rgba(255,183,77,0.08)',
-    accent: '#ffb74d',
-    icon: '🌿',
-  },
-  {
-    name: 'The Second Life Project',
-    type: 'Clothes & Resources',
-    description: 'Clothes segregation and distribution events that have reached thousands of families.',
-    color: 'rgba(186,104,200,0.08)',
-    accent: '#ba68c8',
-    icon: '👕',
-  },
-  {
-    name: 'Dum Dum Community Kitchen',
-    type: 'Food Security',
-    description: 'Regular food distribution drives reaching over 200 people per event.',
-    color: 'rgba(239,83,80,0.08)',
-    accent: '#ef5350',
-    icon: '🍱',
-  },
-  {
-    name: 'GreenKolkata Initiative',
-    type: 'Urban Ecology',
-    description: 'City-wide plantation drives and waste awareness campaigns.',
-    color: 'rgba(38,198,218,0.08)',
-    accent: '#26c6da',
-    icon: '🌱',
-  },
-  {
-    name: 'Srijan Foundation',
-    type: 'Education',
-    description: 'Stationery and book distribution drives for underprivileged students.',
-    color: 'rgba(255,167,38,0.08)',
-    accent: '#ffa726',
-    icon: '📚',
-  },
-  {
-    name: 'Asha Ki Kiran',
-    type: 'Women Empowerment',
-    description: 'Skill development workshops and hygiene kit distribution in underserved areas.',
-    color: 'rgba(236,64,122,0.08)',
-    accent: '#ec407a',
-    icon: '💪',
-  },
-]
+const fallbackNgoLogos = Array.from({ length: 8 }, (_, i) => i + 1)
+
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+}
+const cardVariant = {
+  hidden: { opacity: 0, y: 24, filter: 'blur(4px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.45 } },
+}
 
 export default function Collaborations() {
+  const [partners, setPartners] = useState<CollabPartner[]>([])
+  const [loading, setLoading] = useState(true)
   const [projectCount, setProjectCount] = useState<number | null>(null)
 
   useEffect(() => {
@@ -90,7 +33,30 @@ export default function Collaborations() {
       .from('welfare_projects')
       .select('id', { count: 'exact', head: true })
       .then(({ count }) => setProjectCount(count ?? 534))
+
+    supabase
+      .from('welfare_projects')
+      .select('collab_name, collab_logo, collab_logo_alt')
+      .not('collab_name', 'is', null)
+      .eq('is_draft', false)
+      .then(({ data }) => {
+        if (data) {
+          const map = new Map<string, CollabPartner>()
+          for (const row of data) {
+            const name = row.collab_name as string
+            if (!map.has(name)) {
+              map.set(name, { collab_name: name, collab_logo: row.collab_logo, collab_logo_alt: row.collab_logo_alt, projectCount: 0 })
+            }
+            const entry = map.get(name)!
+            entry.projectCount += 1
+          }
+          setPartners(Array.from(map.values()).sort((a, b) => b.projectCount - a.projectCount))
+        }
+        setLoading(false)
+      })
   }, [])
+
+  const accentColors = ['#54d186', '#4cb8d4', '#ffb74d', '#ba68c8', '#ef5350', '#26c6da', '#ffa726', '#ec407a']
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#f7f5f0' }}>
@@ -133,7 +99,8 @@ export default function Collaborations() {
               letterSpacing: '-1.5px',
               color: '#f7f5f0',
               marginBottom: '24px',
-            }}
+              textWrap: 'balance',
+            } as React.CSSProperties}
           >
             Better together than<br />
             <span
@@ -174,7 +141,7 @@ export default function Collaborations() {
           }}
         >
           {[
-            { value: '8+', label: 'Active Partners' },
+            { value: `${partners.length || '8'}+`, label: 'Active Partners' },
             { value: `${projectCount ?? '534'}+`, label: 'Collaborative Drives' },
             { value: '2021', label: 'Since' },
             { value: 'Pan-Kolkata', label: 'Reach' },
@@ -190,6 +157,7 @@ export default function Collaborations() {
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                   marginBottom: '6px',
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 {stat.value}
@@ -208,106 +176,167 @@ export default function Collaborations() {
         </motion.div>
       </section>
 
-      {/* Partners grid */}
-      <section
-        style={{
-          padding: '0 64px 80px',
-          maxWidth: '1200px',
-          margin: '0 auto',
-        }}
-      >
+      {/* Partners from DB */}
+      {!loading && partners.length > 0 && (
+        <section style={{ padding: '0 64px 60px', maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '22px', fontWeight: 700, color: '#f7f5f0', marginBottom: '32px', textWrap: 'balance' } as React.CSSProperties}>
+            Our Collaboration Partners
+          </h2>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '20px',
+            }}
+          >
+            {partners.map((partner, i) => {
+              const accent = accentColors[i % accentColors.length]
+              return (
+                <motion.div
+                  key={partner.collab_name}
+                  variants={cardVariant}
+                  whileHover={{ y: -4 }}
+                  style={{
+                    background: `${accent}0d`,
+                    border: `1px solid ${accent}28`,
+                    borderRadius: '20px',
+                    padding: '28px',
+                    boxShadow: '0 0 0 1px rgba(255,255,255,0.04)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                    {partner.collab_logo ? (
+                      <div
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '14px',
+                          background: 'rgba(255,255,255,0.08)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={partner.collab_logo}
+                          alt={partner.collab_logo_alt ?? partner.collab_name}
+                          style={{ maxWidth: '44px', maxHeight: '44px', objectFit: 'contain', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }}
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '14px',
+                          background: `${accent}22`,
+                          border: `1px solid ${accent}33`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          fontFamily: "'Neutral Face Bold', sans-serif",
+                          fontSize: '18px',
+                          color: accent,
+                        }}
+                      >
+                        {partner.collab_name[0]}
+                      </div>
+                    )}
+                    <div>
+                      <h3
+                        style={{
+                          fontFamily: "'Neutral Face Bold', sans-serif",
+                          fontSize: '16px',
+                          fontWeight: 700,
+                          color: '#f7f5f0',
+                          margin: '0 0 4px',
+                          textWrap: 'balance',
+                        } as React.CSSProperties}
+                      >
+                        {partner.collab_name}
+                      </h3>
+                      <span
+                        style={{
+                          fontFamily: "'Neutral Face Bold', sans-serif",
+                          fontSize: '10px',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: accent,
+                          background: `${accent}18`,
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {partner.projectCount} {partner.projectCount === 1 ? 'project' : 'projects'}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        </section>
+      )}
+
+      {/* Static NGO logo grid as fallback / always shown */}
+      <section style={{ padding: '0 64px 80px', maxWidth: '1200px', margin: '0 auto' }}>
+        <h2 style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '22px', fontWeight: 700, color: '#f7f5f0', marginBottom: '32px', textWrap: 'balance' } as React.CSSProperties}>
+          NGO Network
+        </h2>
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '20px',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '16px',
           }}
         >
-          {staticCollabs.map((collab, i) => (
+          {fallbackNgoLogos.map((n) => (
             <motion.div
-              key={collab.name}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.07 }}
-              style={{
-                background: collab.color,
-                border: `1px solid ${collab.accent}28`,
-                borderRadius: '20px',
-                padding: '28px',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                cursor: 'default',
-              }}
+              key={n}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: (n - 1) * 0.06 }}
               whileHover={{ y: -4 }}
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px',
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100px',
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.04)',
+              }}
             >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
-                <div
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '14px',
-                    background: `${collab.accent}18`,
-                    border: `1px solid ${collab.accent}30`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '22px',
-                    flexShrink: 0,
-                  }}
-                >
-                  {collab.icon}
-                </div>
-                <div>
-                  <h3
-                    style={{
-                      fontFamily: "'Neutral Face Bold', sans-serif",
-                      fontSize: '16px',
-                      fontWeight: 700,
-                      color: '#f7f5f0',
-                      margin: '0 0 4px',
-                    }}
-                  >
-                    {collab.name}
-                  </h3>
-                  <span
-                    style={{
-                      fontFamily: "'Neutral Face Bold', sans-serif",
-                      fontSize: '10px',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: collab.accent,
-                      background: `${collab.accent}18`,
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    {collab.type}
-                  </span>
-                </div>
-              </div>
-              <p
-                style={{
-                  fontFamily: "'Neutral Face Regular', sans-serif",
-                  fontSize: '14px',
-                  color: 'rgba(247,245,240,0.6)',
-                  lineHeight: 1.65,
-                  margin: 0,
+              <img
+                src={`/images/ngo-logo-${n}.png`}
+                alt={`NGO Partner ${n}`}
+                style={{ maxWidth: '100%', maxHeight: '64px', objectFit: 'contain', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }}
+                onError={e => {
+                  const el = e.target as HTMLImageElement
+                  el.style.display = 'none'
+                  const p = el.parentElement
+                  if (p) p.innerHTML = `<span style="font-family:'Neutral Face Regular',sans-serif;font-size:12px;color:#555;text-align:center;">Partner ${n}</span>`
                 }}
-              >
-                {collab.description}
-              </p>
+              />
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* Become a partner CTA */}
-      <section
-        style={{
-          padding: '0 64px 120px',
-          maxWidth: '1200px',
-          margin: '0 auto',
-        }}
-      >
+      <section style={{ padding: '0 64px 120px', maxWidth: '1200px', margin: '0 auto' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -333,7 +362,8 @@ export default function Collaborations() {
                 letterSpacing: '-0.5px',
                 color: '#f7f5f0',
                 marginBottom: '16px',
-              }}
+                textWrap: 'balance',
+              } as React.CSSProperties}
             >
               Want to collaborate with us?
             </h2>
@@ -349,13 +379,10 @@ export default function Collaborations() {
               If you're an NGO, student club, or organisation that shares our values, we'd love to plan something together. Our events are open, informal, and driven by people who genuinely care.
             </p>
           </div>
-          <Link
-            to="/contact"
-            style={{ textDecoration: 'none', flexShrink: 0 }}
-          >
+          <Link to="/contact" style={{ textDecoration: 'none', flexShrink: 0 }}>
             <motion.div
               whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.96 }}
               style={{
                 background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
                 color: '#0a0a0a',

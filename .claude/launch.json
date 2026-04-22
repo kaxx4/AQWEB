@@ -8,7 +8,7 @@
       "port": 5173
     },
     {
-      "name": "Vite Preview (prod build)",
+      "name": "Vite Preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview"],
       "port": 4173

@@ -12,13 +12,45 @@ export interface WelfareProject {
   is_draft: boolean
   header: string
   featured: boolean
+  content: string | null
   location: string | null
   key_statistic: string | null
   workshop_date: string | null
   objective: string | null
+  short_summary: string | null
+  collab_logo: string | null
+  collab_logo_alt: string | null
+  collab_name: string | null
+  long_writeup: string | null
+  image_1: string | null
+  image_1_alt: string | null
+  label_1: string | null
+  image_2: string | null
+  image_2_alt: string | null
+  label_2: string | null
+  image_3: string | null
+  image_3_alt: string | null
+  label_3: string | null
+  image_4: string | null
+  image_4_alt: string | null
+  label_4: string | null
   volunteers: number | null
+  instagram_link: string | null
+  main_image: string | null
+  main_image_alt: string | null
   google_drive_link: string | null
   status: string | null
+  created_at: string | null
+}
+
+export interface ContactSubmission {
+  id?: number
+  created_at?: string
+  name: string
+  email: string
+  phone: string | null
+  role: string | null
+  message: string
 }
 
 export interface Blog {

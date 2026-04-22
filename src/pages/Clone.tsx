@@ -612,7 +612,8 @@ export default function Clone() {
               letterSpacing: '-2px',
               lineHeight: 1.05,
               margin: '0 0 24px',
-            }}
+              textWrap: 'balance',
+            } as React.CSSProperties}
           >
             STARTED AS AN NGO.
             <br />
@@ -728,7 +729,8 @@ export default function Clone() {
               letterSpacing: '-2px',
               lineHeight: '70px',
               margin: '0 0 20px',
-            }}>
+              textWrap: 'balance',
+            } as React.CSSProperties}>
               jOIN US NOW
             </h2>
             <p style={{
@@ -746,7 +748,7 @@ export default function Clone() {
             <motion.a
               href="#"
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.96 }}
               style={{
                 background: '#255c3b',
                 color: '#f7f5f0',
@@ -773,7 +775,7 @@ export default function Clone() {
               { n: '4 years', l: 'running' },
             ].map((s) => (
               <div key={s.n} style={{ borderLeft: '2px solid rgba(255,255,255,0.35)', paddingLeft: '20px' }}>
-                <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '28px', color: '#f7f5f0', letterSpacing: '-0.5px' }}>{s.n}</div>
+                <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '28px', color: '#f7f5f0', letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>{s.n}</div>
                 <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.8)', letterSpacing: '0.03em' }}>{s.l}</div>
               </div>
             ))}
@@ -799,7 +801,8 @@ export default function Clone() {
             color: '#f7f5f0',
             letterSpacing: '-0.44px',
             margin: 0,
-          }}>
+            textWrap: 'balance',
+          } as React.CSSProperties}>
             EVERYTHING WE DO
           </h2>
         </motion.div>
@@ -965,7 +968,8 @@ export default function Clone() {
               color: '#0a0a0a',
               letterSpacing: '-0.44px',
               margin: '0 0 16px',
-            }}>
+              textWrap: 'balance',
+            } as React.CSSProperties}>
               REAL IMPACT. NOT JUST BIG TALK.
             </h2>
             <p style={{
@@ -995,7 +999,7 @@ export default function Clone() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0 }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[0].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[0].line1}</div>
@@ -1009,7 +1013,7 @@ export default function Clone() {
               transition={{ duration: 0.5, delay: 0.1 }}
               style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}
             >
-              <img src="/images/event-photo-1.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
+              <img src="/images/event-photo-1.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
             </motion.div>
 
             <motion.div
@@ -1018,7 +1022,7 @@ export default function Clone() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[1].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[1].line1}</div>
@@ -1032,7 +1036,7 @@ export default function Clone() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[2].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[2].line1}</div>
@@ -1045,7 +1049,7 @@ export default function Clone() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[3].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[3].line1}</div>
@@ -1059,7 +1063,7 @@ export default function Clone() {
               transition={{ duration: 0.5, delay: 0.3 }}
               style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}
             >
-              <img src="/images/event-photo-2.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
+              <img src="/images/event-photo-2.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
             </motion.div>
 
             {/* Row 3: photo, stat, stat */}
@@ -1070,7 +1074,7 @@ export default function Clone() {
               transition={{ duration: 0.5, delay: 0.2 }}
               style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}
             >
-              <img src="/images/event-photo-3.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
+              <img src="/images/event-photo-3.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
             </motion.div>
 
             <motion.div
@@ -1079,7 +1083,7 @@ export default function Clone() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[4].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[4].line1}</div>
@@ -1092,7 +1096,7 @@ export default function Clone() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[5].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[5].line1}</div>
@@ -1107,7 +1111,7 @@ export default function Clone() {
               transition={{ duration: 0.5, delay: 0.3 }}
               style={{ gridColumn: '2' }}
             >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px' }}>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
                 {impactStats[6].number}
               </div>
               <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[6].line1}</div>
@@ -1343,7 +1347,7 @@ export default function Clone() {
           <motion.a
             href="#projects-browser"
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: 0.96 }}
             style={{
               background: '#255c3b',
               color: '#f7f5f0',
@@ -1398,7 +1402,7 @@ export default function Clone() {
           <motion.a
             href="#"
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: 0.96 }}
             style={{
               background: '#3e8bc2',
               color: '#f7f5f0',
@@ -1511,6 +1515,71 @@ export default function Clone() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* ============================================
+          PARTNER NGO LOGOS TICKER
+          ============================================ */}
+      <section style={{ background: '#f7f5f0', padding: '48px 0', overflow: 'hidden', borderTop: '1px solid #e5e5e5' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          style={{ textAlign: 'center', marginBottom: '32px' }}
+        >
+          <h2 style={{
+            fontFamily: "'Neutral Face Bold', sans-serif",
+            fontWeight: 700,
+            fontSize: '28px',
+            color: '#0a0a0a',
+            letterSpacing: '-0.3px',
+            margin: 0,
+            textWrap: 'balance',
+          } as React.CSSProperties}>
+            NGOs we work with
+          </h2>
+        </motion.div>
+        <div style={{ overflow: 'hidden', width: '100%' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '40px',
+              animation: 'ticker-scroll 20s linear infinite',
+              width: 'max-content',
+            }}
+          >
+            {[...Array.from({ length: 8 }, (_, i) => i + 1), ...Array.from({ length: 8 }, (_, i) => i + 1)].map((n, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  padding: '16px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '80px',
+                  minWidth: '140px',
+                  flexShrink: 0,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                }}
+              >
+                <img
+                  src={`/images/ngo-logo-${n}.png`}
+                  alt={`NGO partner ${n}`}
+                  style={{ maxWidth: '100%', maxHeight: '52px', objectFit: 'contain', outline: '1px solid rgba(0,0,0,0.06)', outlineOffset: '-1px' }}
+                  onError={e => {
+                    const el = e.target as HTMLImageElement
+                    el.style.display = 'none'
+                    const p = el.parentElement
+                    if (p) p.innerHTML = `<span style="font-family:'Neutral Face Regular',sans-serif;font-size:12px;color:#a3a3a3;text-align:center;">Partner ${n}</span>`
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ============================================
@@ -1832,7 +1901,7 @@ export default function Clone() {
             <img
               src="/images/event-photo-4.jpg"
               alt="Person near water"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }}
               onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }}
             />
           </motion.div>
@@ -2103,7 +2172,7 @@ export default function Clone() {
           <motion.a
             href="#"
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: 0.96 }}
             style={{
               background: '#255c3b',
               color: '#f7f5f0',
@@ -2151,7 +2220,7 @@ export default function Clone() {
             <motion.a
               href="#"
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.96 }}
               style={{
                 background: '#255c3b',
                 color: '#f7f5f0',

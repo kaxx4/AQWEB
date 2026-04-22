@@ -40,6 +40,11 @@ function formatDate(iso: string | null) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function getProjectImage(project: WelfareProject): string {
+  if (project.main_image) return project.main_image
+  return `/images/initiative-${(project.id % 43) + 1}.png`
+}
+
 function CalendarIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,32 +75,36 @@ function PeopleIcon() {
   )
 }
 
-function DriveIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
-    </svg>
-  )
+const PAGE_SIZE = 12
+
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.06 }
+  }
 }
 
-const PAGE_SIZE = 12
+const cardVariants = {
+  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.35 } },
+}
 
 function SkeletonCard() {
   return (
     <div
       style={{
         background: '#141414',
-        borderRadius: '16px',
-        padding: '24px',
-        border: '1px solid rgba(255,255,255,0.06)',
-        height: '220px',
+        borderRadius: '20px',
+        overflow: 'hidden',
+        boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
       }}
     >
-      <div style={{ width: '80px', height: '22px', background: 'rgba(255,255,255,0.07)', borderRadius: '6px', marginBottom: '16px' }} />
-      <div style={{ width: '90%', height: '18px', background: 'rgba(255,255,255,0.07)', borderRadius: '6px', marginBottom: '8px' }} />
-      <div style={{ width: '70%', height: '14px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', marginBottom: '20px' }} />
-      <div style={{ width: '60%', height: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', marginBottom: '6px' }} />
-      <div style={{ width: '50%', height: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px' }} />
+      <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(255,255,255,0.07)' }} />
+      <div style={{ padding: '20px' }}>
+        <div style={{ width: '80px', height: '20px', background: 'rgba(255,255,255,0.07)', borderRadius: '6px', marginBottom: '12px' }} />
+        <div style={{ width: '90%', height: '16px', background: 'rgba(255,255,255,0.07)', borderRadius: '6px', marginBottom: '8px' }} />
+        <div style={{ width: '70%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }} />
+      </div>
     </div>
   )
 }
@@ -110,7 +119,7 @@ export default function Projects() {
   useEffect(() => {
     supabase
       .from('welfare_projects')
-      .select('id,slug,is_draft,header,featured,location,key_statistic,workshop_date,objective,volunteers,google_drive_link,status')
+      .select('id,slug,is_draft,header,featured,location,key_statistic,workshop_date,objective,volunteers,google_drive_link,status,short_summary,collab_name,collab_logo,main_image,main_image_alt')
       .eq('is_draft', false)
       .order('workshop_date', { ascending: false })
       .then(({ data, error }) => {
@@ -183,7 +192,6 @@ export default function Projects() {
           overflow: 'hidden',
         }}
       >
-        {/* Subtle gradient blob */}
         <div
           style={{
             position: 'absolute',
@@ -236,7 +244,8 @@ export default function Projects() {
               margin: '0 0 20px',
               lineHeight: 1.05,
               letterSpacing: '-1px',
-            }}
+              textWrap: 'balance',
+            } as React.CSSProperties}
           >
             534 Projects.
             <br />
@@ -280,7 +289,6 @@ export default function Projects() {
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        {/* Objective chips */}
         <div
           style={{
             display: 'flex',
@@ -294,7 +302,7 @@ export default function Projects() {
             <motion.button
               key={obj}
               whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => handleFilterChange(obj)}
               style={{
                 background: filter === obj
@@ -309,7 +317,7 @@ export default function Projects() {
                 fontWeight: 700,
                 cursor: 'pointer',
                 letterSpacing: '0.03em',
-                transition: 'all 0.2s',
+                transition: 'background 0.2s, color 0.2s, border-color 0.2s',
               }}
             >
               {obj}
@@ -317,7 +325,6 @@ export default function Projects() {
           ))}
         </div>
 
-        {/* Search */}
         <div style={{ position: 'relative', maxWidth: '420px' }}>
           <svg
             style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}
@@ -412,22 +419,21 @@ export default function Projects() {
           <AnimatePresence mode="wait">
             <motion.div
               key={`${filter}-${search}-${page}`}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              exit={{ opacity: 0, y: -12, filter: 'blur(4px)', transition: { duration: 0.15 } }}
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: '20px',
               }}
             >
-              {paged.map((project, i) => (
+              {paged.map((project) => (
                 <motion.div
                   key={project.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: i * 0.03 }}
+                  variants={cardVariants}
+                  whileHover={{ y: -4 }}
                 >
                   <Link
                     to={`/projects/${project.slug}`}
@@ -436,203 +442,209 @@ export default function Projects() {
                     <div
                       style={{
                         background: '#111111',
-                        borderRadius: '16px',
-                        padding: '24px',
-                        border: '1px solid rgba(255,255,255,0.07)',
+                        borderRadius: '20px',
+                        padding: '0',
+                        boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
                         cursor: 'pointer',
-                        transition: 'all 0.25s',
-                        position: 'relative',
                         overflow: 'hidden',
+                        transition: 'box-shadow 0.25s',
+                        position: 'relative',
                       }}
                       onMouseEnter={e => {
                         const el = e.currentTarget as HTMLDivElement
-                        el.style.border = '1px solid rgba(255,255,255,0.15)'
-                        el.style.background = '#161616'
-                        el.style.transform = 'translateY(-2px)'
+                        el.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.18)'
                       }}
                       onMouseLeave={e => {
                         const el = e.currentTarget as HTMLDivElement
-                        el.style.border = '1px solid rgba(255,255,255,0.07)'
-                        el.style.background = '#111111'
-                        el.style.transform = 'translateY(0)'
+                        el.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.08)'
                       }}
                     >
-                      {/* Featured badge */}
-                      {project.featured && (
-                        <div
+                      {/* Image */}
+                      <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden' }}>
+                        <img
+                          src={getProjectImage(project)}
+                          alt={project.main_image_alt ?? project.header}
                           style={{
-                            position: 'absolute',
-                            top: '16px',
-                            right: '16px',
-                            background: 'rgba(255,215,0,0.15)',
-                            border: '1px solid rgba(255,215,0,0.3)',
-                            borderRadius: '6px',
-                            padding: '3px 8px',
-                            fontSize: '10px',
-                            fontFamily: "'Neutral Face Bold', sans-serif",
-                            color: '#ffd700',
-                            letterSpacing: '0.05em',
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                            outline: '1px solid rgba(255,255,255,0.1)',
+                            outlineOffset: '-1px',
+                            borderRadius: '20px 20px 0 0',
                           }}
-                        >
-                          ★ FEATURED
-                        </div>
-                      )}
-
-                      {/* Objective badge */}
-                      <div
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: getObjBg(project.objective),
-                          border: `1px solid ${getObjColor(project.objective)}33`,
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          marginBottom: '14px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: getObjColor(project.objective),
-                            flexShrink: 0,
+                          onError={e => {
+                            const img = e.target as HTMLImageElement
+                            img.src = `/images/initiative-${(project.id % 43) + 1}.png`
                           }}
                         />
-                        <span
-                          style={{
-                            fontFamily: "'Neutral Face Bold', sans-serif",
-                            fontSize: '10px',
-                            color: getObjColor(project.objective),
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {project.objective ?? 'Others'}
-                        </span>
-                      </div>
-
-                      {/* Title */}
-                      <h3
-                        style={{
-                          fontFamily: "'Neutral Face Bold', sans-serif",
-                          fontWeight: 700,
-                          fontSize: '15px',
-                          color: '#f7f5f0',
-                          margin: '0 0 8px',
-                          lineHeight: '1.4',
-                          paddingRight: project.featured ? '70px' : '0',
-                        }}
-                      >
-                        {project.header}
-                      </h3>
-
-                      {/* Key stat */}
-                      {project.key_statistic && (
-                        <p
-                          style={{
-                            fontFamily: "'Instrument Serif', serif",
-                            fontStyle: 'italic',
-                            fontSize: '13px',
-                            color: '#54d186',
-                            margin: '0 0 14px',
-                            lineHeight: '1.4',
-                          }}
-                        >
-                          {project.key_statistic}
-                        </p>
-                      )}
-
-                      {/* Meta info */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px',
-                        }}
-                      >
-                        {project.location && (
+                        {/* Collab badge */}
+                        {project.collab_name && (
                           <div
                             style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              color: 'rgba(247,245,240,0.45)',
-                              fontSize: '12px',
-                              fontFamily: "'Neutral Face Regular', sans-serif",
+                              position: 'absolute',
+                              top: '10px',
+                              right: '10px',
+                              background: 'rgba(10,10,10,0.75)',
+                              backdropFilter: 'blur(8px)',
+                              borderRadius: '8px',
+                              padding: '4px 10px',
+                              fontSize: '10px',
+                              fontFamily: "'Neutral Face Bold', sans-serif",
+                              color: '#f7f5f0',
+                              letterSpacing: '0.04em',
+                              maxWidth: '120px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <LocationIcon />
-                            {project.location}
+                            {project.collab_name}
                           </div>
                         )}
-                        {project.workshop_date && (
+                        {/* Featured badge */}
+                        {project.featured && (
                           <div
                             style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              color: 'rgba(247,245,240,0.45)',
-                              fontSize: '12px',
-                              fontFamily: "'Neutral Face Regular', sans-serif",
+                              position: 'absolute',
+                              top: '10px',
+                              left: '10px',
+                              background: 'rgba(255,215,0,0.15)',
+                              border: '1px solid rgba(255,215,0,0.3)',
+                              borderRadius: '6px',
+                              padding: '3px 8px',
+                              fontSize: '10px',
+                              fontFamily: "'Neutral Face Bold', sans-serif",
+                              color: '#ffd700',
+                              letterSpacing: '0.05em',
                             }}
                           >
-                            <CalendarIcon />
-                            {formatDate(project.workshop_date)}
-                          </div>
-                        )}
-                        {project.volunteers != null && project.volunteers > 0 && (
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              color: 'rgba(247,245,240,0.45)',
-                              fontSize: '12px',
-                              fontFamily: "'Neutral Face Regular', sans-serif",
-                            }}
-                          >
-                            <PeopleIcon />
-                            {project.volunteers} volunteers
+                            FEATURED
                           </div>
                         )}
                       </div>
 
-                      {/* Drive link */}
-                      {project.google_drive_link && (
-                        <a
-                          href={project.google_drive_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
+                      {/* Content */}
+                      <div style={{ padding: '20px' }}>
+                        {/* Objective badge */}
+                        <div
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            marginTop: '14px',
-                            background: 'rgba(76,184,212,0.1)',
-                            border: '1px solid rgba(76,184,212,0.25)',
-                            borderRadius: '8px',
-                            padding: '6px 12px',
-                            fontSize: '11px',
-                            fontFamily: "'Neutral Face Bold', sans-serif",
-                            color: '#4cb8d4',
-                            textDecoration: 'none',
-                            letterSpacing: '0.04em',
-                            transition: 'all 0.2s',
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.background = 'rgba(76,184,212,0.18)'
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.background = 'rgba(76,184,212,0.1)'
+                            background: getObjBg(project.objective),
+                            border: `1px solid ${getObjColor(project.objective)}33`,
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            marginBottom: '12px',
                           }}
                         >
-                          <DriveIcon />
-                          View Photos
-                        </a>
-                      )}
+                          <div
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              background: getObjColor(project.objective),
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontFamily: "'Neutral Face Bold', sans-serif",
+                              fontSize: '10px',
+                              color: getObjColor(project.objective),
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            {project.objective ?? 'Others'}
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3
+                          style={{
+                            fontFamily: "'Neutral Face Bold', sans-serif",
+                            fontWeight: 700,
+                            fontSize: '15px',
+                            color: '#f7f5f0',
+                            margin: '0 0 8px',
+                            lineHeight: '1.4',
+                            textWrap: 'balance',
+                          } as React.CSSProperties}
+                        >
+                          {project.header}
+                        </h3>
+
+                        {/* Short summary */}
+                        {project.short_summary && (
+                          <p
+                            style={{
+                              fontFamily: "'Neutral Face Regular', sans-serif",
+                              fontSize: '12px',
+                              color: 'rgba(247,245,240,0.5)',
+                              margin: '0 0 12px',
+                              lineHeight: '1.5',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            } as React.CSSProperties}
+                          >
+                            {project.short_summary}
+                          </p>
+                        )}
+
+                        {/* Meta */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {project.location && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                color: 'rgba(247,245,240,0.45)',
+                                fontSize: '12px',
+                                fontFamily: "'Neutral Face Regular', sans-serif",
+                              }}
+                            >
+                              <LocationIcon />
+                              {project.location}
+                            </div>
+                          )}
+                          {project.workshop_date && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                color: 'rgba(247,245,240,0.45)',
+                                fontSize: '12px',
+                                fontFamily: "'Neutral Face Regular', sans-serif",
+                              }}
+                            >
+                              <CalendarIcon />
+                              {formatDate(project.workshop_date)}
+                            </div>
+                          )}
+                          {project.volunteers != null && project.volunteers > 0 && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                color: 'rgba(247,245,240,0.45)',
+                                fontSize: '12px',
+                                fontFamily: "'Neutral Face Regular', sans-serif",
+                                fontVariantNumeric: 'tabular-nums',
+                              }}
+                            >
+                              <PeopleIcon />
+                              {project.volunteers} volunteers
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </Link>
                 </motion.div>
@@ -652,9 +664,10 @@ export default function Projects() {
               marginTop: '56px',
             }}
           >
-            <button
+            <motion.button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
+              whileTap={{ scale: 0.96 }}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -664,11 +677,11 @@ export default function Projects() {
                 cursor: page === 0 ? 'not-allowed' : 'pointer',
                 fontFamily: "'Neutral Face Bold', sans-serif",
                 fontSize: '13px',
-                transition: 'all 0.2s',
+                transition: 'opacity 0.2s',
               }}
             >
               ← Prev
-            </button>
+            </motion.button>
 
             {pageNumbers.map((num, i) =>
               num === '...' ? (
@@ -676,9 +689,10 @@ export default function Projects() {
                   …
                 </span>
               ) : (
-                <button
+                <motion.button
                   key={num}
                   onClick={() => setPage(num as number)}
+                  whileTap={{ scale: 0.96 }}
                   style={{
                     background: page === num ? '#54d186' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${page === num ? '#54d186' : 'rgba(255,255,255,0.1)'}`,
@@ -689,17 +703,19 @@ export default function Projects() {
                     cursor: 'pointer',
                     fontFamily: "'Neutral Face Bold', sans-serif",
                     fontSize: '13px',
-                    transition: 'all 0.2s',
+                    transition: 'background 0.2s, color 0.2s',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   {(num as number) + 1}
-                </button>
+                </motion.button>
               )
             )}
 
-            <button
+            <motion.button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
+              whileTap={{ scale: 0.96 }}
               style={{
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -709,11 +725,11 @@ export default function Projects() {
                 cursor: page === totalPages - 1 ? 'not-allowed' : 'pointer',
                 fontFamily: "'Neutral Face Bold', sans-serif",
                 fontSize: '13px',
-                transition: 'all 0.2s',
+                transition: 'opacity 0.2s',
               }}
             >
               Next →
-            </button>
+            </motion.button>
           </div>
         )}
       </section>

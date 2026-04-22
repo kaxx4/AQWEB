@@ -48,6 +48,8 @@ const pageLinks = [
   { label: 'Blog', path: '/blog' },
   { label: 'About Us', path: '/about' },
   { label: 'Collaborations', path: '/collaborations' },
+  { label: 'Support Us', path: '/support' },
+  { label: 'Links', path: '/links' },
   { label: 'Contact / Join', path: '/contact' },
 ]
 

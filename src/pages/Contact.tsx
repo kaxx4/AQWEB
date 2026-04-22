@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { motion } from 'motion/react'
+import { Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'motion/react'
+import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import Footer from '../components/Footer'
 
@@ -12,15 +14,40 @@ const roles = [
   { id: 'other', label: 'Other / Just Curious', desc: 'Tell us what you have in mind', icon: '✨' },
 ]
 
+const containerVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1 } },
+}
+
+const itemVariant = {
+  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.45 } },
+}
+
 export default function Contact() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Would hook into Supabase / email service in production
-    setSubmitted(true)
+    setSubmitting(true)
+    setSubmitError(null)
+    const { error } = await supabase.from('contact_submissions').insert({
+      name: formState.name,
+      email: formState.email,
+      phone: formState.phone || null,
+      role: selectedRole,
+      message: formState.message,
+    })
+    setSubmitting(false)
+    if (error) {
+      setSubmitError('Something went wrong. Please try again or email us directly.')
+    } else {
+      setSubmitted(true)
+    }
   }
 
   return (
@@ -31,7 +58,7 @@ export default function Contact() {
       <section
         style={{
           paddingTop: '140px',
-          paddingBottom: '80px',
+          paddingBottom: '60px',
           paddingLeft: '64px',
           paddingRight: '64px',
           maxWidth: '1200px',
@@ -39,11 +66,11 @@ export default function Contact() {
         }}
       >
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
         >
-          <p
+          <motion.p variants={itemVariant}
             style={{
               fontFamily: "'Neutral Face Bold', sans-serif",
               fontSize: '11px',
@@ -54,8 +81,8 @@ export default function Contact() {
             }}
           >
             Join the Chaos
-          </p>
-          <h1
+          </motion.p>
+          <motion.h1 variants={itemVariant}
             style={{
               fontFamily: "'Neutral Face Bold', sans-serif",
               fontWeight: 700,
@@ -64,9 +91,10 @@ export default function Contact() {
               letterSpacing: '-1.5px',
               color: '#f7f5f0',
               marginBottom: '24px',
-            }}
+              textWrap: 'balance',
+            } as React.CSSProperties}
           >
-            Good things happen when<br />
+            We'd love to hear<br />
             <span
               style={{
                 background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
@@ -75,20 +103,21 @@ export default function Contact() {
                 backgroundClip: 'text',
               }}
             >
-              people show up.
+              from you.
             </span>
-          </h1>
-          <p
+          </motion.h1>
+          <motion.p variants={itemVariant}
             style={{
               fontFamily: "'Neutral Face Regular', sans-serif",
               fontSize: '17px',
               color: 'rgba(247,245,240,0.6)',
               lineHeight: 1.7,
               maxWidth: '540px',
+              margin: 0,
             }}
           >
             AquaTerra runs on the energy of people who care. Whether you want to volunteer for a drive, shoot photos, write for the blog, or just say hello — we want to hear from you.
-          </p>
+          </motion.p>
         </motion.div>
       </section>
 
@@ -108,75 +137,114 @@ export default function Contact() {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
         >
-          {!submitted ? (
-            <>
-              <h2
-                style={{
-                  fontFamily: "'Neutral Face Bold', sans-serif",
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  color: '#f7f5f0',
-                  marginBottom: '20px',
-                }}
-              >
-                How do you want to help?
-              </h2>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '10px',
-                  marginBottom: '36px',
-                }}
-              >
-                {roles.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => setSelectedRole(r.id)}
-                    style={{
-                      background: selectedRole === r.id ? 'rgba(84,209,134,0.12)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${selectedRole === r.id ? '#54d186' : 'rgba(255,255,255,0.1)'}`,
-                      borderRadius: '12px',
-                      padding: '14px 16px',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <div style={{ fontSize: '20px', marginBottom: '6px' }}>{r.icon}</div>
-                    <div
+          <AnimatePresence mode="wait">
+            {!submitted ? (
+              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -12, filter: 'blur(4px)', transition: { duration: 0.15 } }}>
+                <h2
+                  style={{
+                    fontFamily: "'Neutral Face Bold', sans-serif",
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    color: '#f7f5f0',
+                    marginBottom: '20px',
+                    textWrap: 'balance',
+                  } as React.CSSProperties}
+                >
+                  How do you want to help?
+                </h2>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '10px',
+                    marginBottom: '36px',
+                  }}
+                >
+                  {roles.map((r) => (
+                    <motion.button
+                      key={r.id}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => setSelectedRole(r.id)}
                       style={{
-                        fontFamily: "'Neutral Face Bold', sans-serif",
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        color: selectedRole === r.id ? '#54d186' : '#f7f5f0',
-                        marginBottom: '3px',
+                        background: selectedRole === r.id ? 'rgba(84,209,134,0.12)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${selectedRole === r.id ? '#54d186' : 'rgba(255,255,255,0.1)'}`,
+                        borderRadius: '12px',
+                        padding: '14px 16px',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, border-color 0.2s',
                       }}
                     >
-                      {r.label}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "'Neutral Face Regular', sans-serif",
-                        fontSize: '11px',
-                        color: 'rgba(247,245,240,0.45)',
-                      }}
-                    >
-                      {r.desc}
-                    </div>
-                  </button>
-                ))}
-              </div>
+                      <div style={{ fontSize: '20px', marginBottom: '6px' }}>{r.icon}</div>
+                      <div
+                        style={{
+                          fontFamily: "'Neutral Face Bold', sans-serif",
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          color: selectedRole === r.id ? '#54d186' : '#f7f5f0',
+                          marginBottom: '3px',
+                        }}
+                      >
+                        {r.label}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "'Neutral Face Regular', sans-serif",
+                          fontSize: '11px',
+                          color: 'rgba(247,245,240,0.45)',
+                        }}
+                      >
+                        {r.desc}
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
 
-              <form onSubmit={handleSubmit}>
-                {[
-                  { id: 'name', label: 'Full Name', type: 'text', placeholder: 'Your name' },
-                  { id: 'email', label: 'Email', type: 'email', placeholder: 'your@email.com' },
-                  { id: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '+91 9XXXXXXXXX' },
-                ].map((field) => (
-                  <div key={field.id} style={{ marginBottom: '16px' }}>
+                <form onSubmit={handleSubmit}>
+                  {[
+                    { id: 'name', label: 'Full Name', type: 'text', placeholder: 'Your name' },
+                    { id: 'email', label: 'Email', type: 'email', placeholder: 'your@email.com' },
+                    { id: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '+91 9XXXXXXXXX' },
+                  ].map((field) => (
+                    <div key={field.id} style={{ marginBottom: '16px' }}>
+                      <label
+                        style={{
+                          display: 'block',
+                          fontFamily: "'Neutral Face Bold', sans-serif",
+                          fontSize: '11px',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: 'rgba(247,245,240,0.45)',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        {field.label}
+                      </label>
+                      <input
+                        type={field.type}
+                        placeholder={field.placeholder}
+                        value={formState[field.id as keyof typeof formState]}
+                        onChange={(e) => setFormState((s) => ({ ...s, [field.id]: e.target.value }))}
+                        required={field.id !== 'phone'}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '10px',
+                          padding: '12px 16px',
+                          fontFamily: "'Neutral Face Regular', sans-serif",
+                          fontSize: '14px',
+                          color: '#f7f5f0',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  <div style={{ marginBottom: '24px' }}>
                     <label
                       style={{
                         display: 'block',
@@ -188,14 +256,14 @@ export default function Contact() {
                         marginBottom: '8px',
                       }}
                     >
-                      {field.label}
+                      Message
                     </label>
-                    <input
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      value={formState[field.id as keyof typeof formState]}
-                      onChange={(e) => setFormState((s) => ({ ...s, [field.id]: e.target.value }))}
-                      required={field.id !== 'phone'}
+                    <textarea
+                      placeholder="Tell us a bit about yourself or what you have in mind…"
+                      rows={4}
+                      value={formState.message}
+                      required
+                      onChange={(e) => setFormState((s) => ({ ...s, message: e.target.value }))}
                       style={{
                         width: '100%',
                         background: 'rgba(255,255,255,0.05)',
@@ -206,104 +274,79 @@ export default function Contact() {
                         fontSize: '14px',
                         color: '#f7f5f0',
                         outline: 'none',
+                        resize: 'vertical',
                         boxSizing: 'border-box',
                       }}
                     />
                   </div>
-                ))}
 
-                <div style={{ marginBottom: '24px' }}>
-                  <label
+                  {submitError && (
+                    <p style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '13px', color: '#ff6b6b', marginBottom: '16px' }}>
+                      {submitError}
+                    </p>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    whileTap={{ scale: 0.96 }}
+                    disabled={submitting}
                     style={{
-                      display: 'block',
+                      background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
+                      color: '#0a0a0a',
+                      border: 'none',
+                      borderRadius: '39px',
+                      padding: '14px 32px',
                       fontFamily: "'Neutral Face Bold', sans-serif",
-                      fontSize: '11px',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(247,245,240,0.45)',
-                      marginBottom: '8px',
+                      fontWeight: 700,
+                      fontSize: '14px',
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      letterSpacing: '0.04em',
+                      opacity: submitting ? 0.7 : 1,
                     }}
                   >
-                    Message
-                  </label>
-                  <textarea
-                    placeholder="Tell us a bit about yourself or what you have in mind…"
-                    rows={4}
-                    value={formState.message}
-                    onChange={(e) => setFormState((s) => ({ ...s, message: e.target.value }))}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '10px',
-                      padding: '12px 16px',
-                      fontFamily: "'Neutral Face Regular', sans-serif",
-                      fontSize: '14px',
-                      color: '#f7f5f0',
-                      outline: 'none',
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                    {submitting ? 'Sending…' : 'Send It →'}
+                  </motion.button>
+                </form>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                style={{
+                  background: 'rgba(84,209,134,0.08)',
+                  border: '1px solid rgba(84,209,134,0.25)',
+                  borderRadius: '20px',
+                  padding: '48px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎉</div>
+                <h3
                   style={{
-                    background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
-                    color: '#0a0a0a',
-                    border: 'none',
-                    borderRadius: '39px',
-                    padding: '14px 32px',
                     fontFamily: "'Neutral Face Bold', sans-serif",
+                    fontSize: '22px',
                     fontWeight: 700,
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    letterSpacing: '0.04em',
+                    color: '#54d186',
+                    marginBottom: '12px',
+                    textWrap: 'balance',
+                  } as React.CSSProperties}
+                >
+                  We got your message!
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "'Neutral Face Regular', sans-serif",
+                    fontSize: '15px',
+                    color: 'rgba(247,245,240,0.65)',
+                    lineHeight: 1.7,
                   }}
                 >
-                  Send It →
-                </motion.button>
-              </form>
-            </>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              style={{
-                background: 'rgba(84,209,134,0.08)',
-                border: '1px solid rgba(84,209,134,0.25)',
-                borderRadius: '20px',
-                padding: '48px',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎉</div>
-              <h3
-                style={{
-                  fontFamily: "'Neutral Face Bold', sans-serif",
-                  fontSize: '22px',
-                  fontWeight: 700,
-                  color: '#54d186',
-                  marginBottom: '12px',
-                }}
-              >
-                We got your message!
-              </h3>
-              <p
-                style={{
-                  fontFamily: "'Neutral Face Regular', sans-serif",
-                  fontSize: '15px',
-                  color: 'rgba(247,245,240,0.65)',
-                  lineHeight: 1.7,
-                }}
-              >
-                Someone from the team will reach out soon. In the meantime, follow us on Instagram to stay up to date.
-              </p>
-            </motion.div>
-          )}
+                  Someone from the team will reach out soon. In the meantime, follow us on Instagram to stay up to date.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Right: Info cards */}
@@ -313,13 +356,75 @@ export default function Contact() {
           transition={{ duration: 0.6, delay: 0.35 }}
           style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
+          {/* WhatsApp */}
+          <motion.a
+            href="https://wa.me/919830000000"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileTap={{ scale: 0.96 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              background: 'rgba(37,211,102,0.1)',
+              border: '1px solid rgba(37,211,102,0.25)',
+              borderRadius: '20px',
+              padding: '24px 28px',
+              textDecoration: 'none',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.16)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(37,211,102,0.1)' }}
+          >
+            <span style={{ fontSize: '32px' }}>💬</span>
+            <div>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '16px', fontWeight: 700, color: '#25d366', marginBottom: '4px' }}>
+                WhatsApp Community
+              </div>
+              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '13px', color: 'rgba(247,245,240,0.55)' }}>
+                Join our WhatsApp group — fastest way to connect
+              </div>
+            </div>
+          </motion.a>
+
+          {/* Instagram */}
+          <motion.a
+            href="https://www.instagram.com/ngo.aquaterra"
+            target="_blank"
+            rel="noopener noreferrer"
+            whileTap={{ scale: 0.96 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              background: 'rgba(193,53,132,0.08)',
+              border: '1px solid rgba(193,53,132,0.2)',
+              borderRadius: '20px',
+              padding: '24px 28px',
+              textDecoration: 'none',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(193,53,132,0.14)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(193,53,132,0.08)' }}
+          >
+            <span style={{ fontSize: '32px' }}>📸</span>
+            <div>
+              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '16px', fontWeight: 700, color: '#c13584', marginBottom: '4px' }}>
+                @ngo.aquaterra
+              </div>
+              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '13px', color: 'rgba(247,245,240,0.55)' }}>
+                Follow us on Instagram
+              </div>
+            </div>
+          </motion.a>
+
           {/* Direct contact */}
           <div
             style={{
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '20px',
-              padding: '32px',
+              padding: '28px',
             }}
           >
             <h3
@@ -328,41 +433,32 @@ export default function Contact() {
                 fontSize: '15px',
                 fontWeight: 700,
                 color: '#f7f5f0',
-                marginBottom: '20px',
+                marginBottom: '16px',
               }}
             >
               Direct Contact
             </h3>
-            {[
-              { icon: '✉️', label: 'Email', value: 'ngo.aquaterra@gmail.com', href: 'mailto:ngo.aquaterra@gmail.com' },
-              { icon: '📸', label: 'Instagram', value: '@ngo.aquaterra', href: 'https://www.instagram.com/ngo.aquaterra' },
-              { icon: '💼', label: 'LinkedIn', value: 'AquaTerra NGO', href: 'https://www.linkedin.com/company/aquaterra-ngo' },
-            ].map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith('http') ? '_blank' : undefined}
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  padding: '12px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  textDecoration: 'none',
-                  color: 'rgba(247,245,240,0.7)',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#f7f5f0')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(247,245,240,0.7)')}
-              >
-                <span style={{ fontSize: '18px' }}>{item.icon}</span>
-                <div>
-                  <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.35)', marginBottom: '2px' }}>{item.label}</div>
-                  <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '14px' }}>{item.value}</div>
-                </div>
-              </a>
-            ))}
+            <a
+              href="mailto:ngo.aquaterra@gmail.com"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 0',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                textDecoration: 'none',
+                color: 'rgba(247,245,240,0.7)',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#f7f5f0')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(247,245,240,0.7)')}
+            >
+              <span style={{ fontSize: '18px' }}>✉️</span>
+              <div>
+                <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(247,245,240,0.35)', marginBottom: '2px' }}>Email</div>
+                <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '14px' }}>ngo.aquaterra@gmail.com</div>
+              </div>
+            </a>
           </div>
 
           {/* Location */}
@@ -371,7 +467,7 @@ export default function Contact() {
               background: 'rgba(255,255,255,0.03)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '20px',
-              padding: '32px',
+              padding: '28px',
             }}
           >
             <h3
@@ -398,50 +494,76 @@ export default function Contact() {
             </p>
           </div>
 
-          {/* Stats */}
+          {/* Quick Links */}
           <div
             style={{
-              background: 'linear-gradient(135deg, rgba(84,209,134,0.06), rgba(76,184,212,0.06))',
-              border: '1px solid rgba(84,209,134,0.15)',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '20px',
-              padding: '32px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '24px',
+              padding: '28px',
             }}
           >
-            {[
-              { value: '534+', label: 'Drives completed' },
-              { value: '2021', label: 'Founded' },
-              { value: 'DARPAN', label: 'Certified NGO' },
-              { value: 'Free', label: 'Always free to join' },
-            ].map((s) => (
-              <div key={s.label}>
-                <div
-                  style={{
-                    fontFamily: "'Neutral Face Bold', sans-serif",
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    marginBottom: '4px',
-                  }}
-                >
-                  {s.value}
-                </div>
-                <div
-                  style={{
-                    fontFamily: "'Neutral Face Regular', sans-serif",
-                    fontSize: '12px',
-                    color: 'rgba(247,245,240,0.45)',
-                  }}
-                >
-                  {s.label}
-                </div>
-              </div>
-            ))}
+            <h3
+              style={{
+                fontFamily: "'Neutral Face Bold', sans-serif",
+                fontSize: '15px',
+                fontWeight: 700,
+                color: '#f7f5f0',
+                marginBottom: '16px',
+              }}
+            >
+              Quick Links
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                { label: 'Explore Website', to: '/', internal: true },
+                { label: 'Our Projects', to: '/projects', internal: true },
+                { label: 'Sundarbans Project', to: '/projects', internal: true },
+                { label: 'Featured on The Statesman', to: '#', internal: false },
+              ].map(link => (
+                link.internal ? (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    style={{
+                      fontFamily: "'Neutral Face Regular', sans-serif",
+                      fontSize: '14px',
+                      color: '#4cb8d4',
+                      textDecoration: 'none',
+                      transition: 'color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#f7f5f0')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#4cb8d4')}
+                  >
+                    {link.label} →
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={link.to}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontFamily: "'Neutral Face Regular', sans-serif",
+                      fontSize: '14px',
+                      color: '#4cb8d4',
+                      textDecoration: 'none',
+                      transition: 'color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#f7f5f0')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#4cb8d4')}
+                  >
+                    {link.label} ↗
+                  </a>
+                )
+              ))}
+            </div>
           </div>
         </motion.div>
       </section>

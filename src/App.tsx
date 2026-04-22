@@ -7,6 +7,9 @@ import BlogPost from './pages/BlogPost'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Collaborations from './pages/Collaborations'
+import SupportUs from './pages/SupportUs'
+import Links from './pages/Links'
+import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
@@ -20,6 +23,9 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/collaborations" element={<Collaborations />} />
+        <Route path="/support" element={<SupportUs />} />
+        <Route path="/links" element={<Links />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
