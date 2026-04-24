@@ -204,12 +204,13 @@ export default function Contact() {
 
                 <form onSubmit={handleSubmit}>
                   {[
-                    { id: 'name', label: 'Full Name', type: 'text', placeholder: 'Your name' },
-                    { id: 'email', label: 'Email', type: 'email', placeholder: 'your@email.com' },
-                    { id: 'phone', label: 'Phone (optional)', type: 'tel', placeholder: '+91 9XXXXXXXXX' },
+                    { id: 'contact-name', label: 'Full Name', type: 'text', placeholder: 'Your name', key: 'name' },
+                    { id: 'contact-email', label: 'Email', type: 'email', placeholder: 'your@email.com', key: 'email' },
+                    { id: 'contact-phone', label: 'Phone (optional)', type: 'tel', placeholder: '+91 9XXXXXXXXX', key: 'phone' },
                   ].map((field) => (
                     <div key={field.id} style={{ marginBottom: '16px' }}>
                       <label
+                        htmlFor={field.id}
                         style={{
                           display: 'block',
                           fontFamily: "'Neutral Face Bold', sans-serif",
@@ -218,16 +219,18 @@ export default function Contact() {
                           textTransform: 'uppercase',
                           color: 'rgba(247,245,240,0.45)',
                           marginBottom: '8px',
+                          cursor: 'pointer',
                         }}
                       >
                         {field.label}
                       </label>
                       <input
+                        id={field.id}
                         type={field.type}
                         placeholder={field.placeholder}
-                        value={formState[field.id as keyof typeof formState]}
-                        onChange={(e) => setFormState((s) => ({ ...s, [field.id]: e.target.value }))}
-                        required={field.id !== 'phone'}
+                        value={formState[field.key as keyof typeof formState]}
+                        onChange={(e) => setFormState((s) => ({ ...s, [field.key]: e.target.value }))}
+                        required={field.key !== 'phone'}
                         style={{
                           width: '100%',
                           background: 'rgba(255,255,255,0.05)',
@@ -237,7 +240,6 @@ export default function Contact() {
                           fontFamily: "'Neutral Face Regular', sans-serif",
                           fontSize: '14px',
                           color: '#f7f5f0',
-                          outline: 'none',
                           boxSizing: 'border-box',
                         }}
                       />
@@ -246,6 +248,7 @@ export default function Contact() {
 
                   <div style={{ marginBottom: '24px' }}>
                     <label
+                      htmlFor="contact-message"
                       style={{
                         display: 'block',
                         fontFamily: "'Neutral Face Bold', sans-serif",
@@ -254,11 +257,13 @@ export default function Contact() {
                         textTransform: 'uppercase',
                         color: 'rgba(247,245,240,0.45)',
                         marginBottom: '8px',
+                        cursor: 'pointer',
                       }}
                     >
                       Message
                     </label>
                     <textarea
+                      id="contact-message"
                       placeholder="Tell us a bit about yourself or what you have in mind…"
                       rows={4}
                       value={formState.message}
@@ -273,7 +278,6 @@ export default function Contact() {
                         fontFamily: "'Neutral Face Regular', sans-serif",
                         fontSize: '14px',
                         color: '#f7f5f0',
-                        outline: 'none',
                         resize: 'vertical',
                         boxSizing: 'border-box',
                       }}

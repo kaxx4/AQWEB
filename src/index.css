@@ -45,6 +45,36 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Global focus ring — never remove, always visible for keyboard users */
+:focus-visible {
+  outline: 2px solid #54d186;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Respect reduced motion — disable transitions & animations */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Horizontal tickers — prevent browser swipe-back on scroll */
+.ticker-track {
+  overscroll-behavior-x: none;
+}
+
+/* Cursor semantics — buttons don't get pointer, links do */
+button {
+  cursor: default;
+}
+a, [role="link"] {
+  cursor: pointer;
+}
+
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

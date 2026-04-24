@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { supabase, type WelfareProject, type Blog, OBJECTIVES, type ObjectiveFilter } from '../lib/supabase'
 
@@ -453,75 +454,77 @@ export default function Clone() {
         }}
       >
         {/* Logo */}
-        <a href="#" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           <AquaTerraLogo fontSize={18} />
-        </a>
+        </Link>
 
         {/* Nav links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          <a
-            href="#"
+          <Link
+            to="/"
             style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '14px', color: '#ffffff', textDecoration: 'none', opacity: 0.9 }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
           >
             🏠
-          </a>
-          {['EVERYTHING WE DO', 'Projects', 'Blogs', 'Support Us', 'Quick Links'].map((link) => (
-            <a
-              key={link}
-              href="#"
-              style={{
-                fontFamily: "'Neutral Face Bold', sans-serif",
-                fontWeight: 700,
-                fontSize: '14px',
-                color: '#ffffff',
-                textDecoration: 'none',
-                opacity: 0.9,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
-            >
-              {link}
-            </a>
+          </Link>
+          {([['EVERYTHING WE DO', '#everything-we-do'], ['Projects', '/projects'], ['Blogs', '/blog'], ['Support Us', '/support'], ['Quick Links', '/links']] as [string, string][]).map(([label, href]) => (
+            href.startsWith('/') ? (
+              <Link
+                key={label}
+                to={href}
+                style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '14px', color: '#ffffff', textDecoration: 'none', opacity: 0.9 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
+              >{label}</Link>
+            ) : (
+              <a
+                key={label}
+                href={href}
+                style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '14px', color: '#ffffff', textDecoration: 'none', opacity: 0.9 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
+              >{label}</a>
+            )
           ))}
         </div>
 
         {/* Right side: social icons + CTA */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <a href="#" style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}
+          <a href="https://www.instagram.com/ngo.aquaterra" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
           >
             <InstagramIcon size={20} />
           </a>
-          <a href="#" style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}
+          <a href="https://www.linkedin.com/company/aquaterra-ngo" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}
             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
           >
             <LinkedInIcon size={20} />
           </a>
-          <motion.a
-            href="#"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            style={{
-              background: '#ffffff',
-              color: '#0a0a0a',
-              borderRadius: '39px',
-              padding: '8px 16px',
-              fontSize: '12px',
-              fontFamily: "'Neutral Face Bold', sans-serif",
-              fontWeight: 700,
-              textDecoration: 'none',
-              letterSpacing: '0.02em',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            be a part
-          </motion.a>
+          <Link to="/contact" style={{ textDecoration: 'none' }}>
+            <motion.span
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                background: '#ffffff',
+                color: '#0a0a0a',
+                borderRadius: '39px',
+                padding: '8px 16px',
+                fontSize: '12px',
+                fontFamily: "'Neutral Face Bold', sans-serif",
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              be a part
+            </motion.span>
+          </Link>
         </div>
       </nav>
 
@@ -745,8 +748,8 @@ export default function Clone() {
             }}>
               "LoR's and Certificates for the best"
             </p>
-            <motion.a
-              href="#"
+            <Link to="/contact" style={{ textDecoration: 'none' }}>
+            <motion.span
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               style={{
@@ -764,7 +767,8 @@ export default function Clone() {
               }}
             >
               SIGN UP NOW <ArrowRight color="#f7f5f0" size={15} />
-            </motion.a>
+            </motion.span>
+            </Link>
           </div>
 
           {/* Right — stats row */}
@@ -1182,8 +1186,8 @@ export default function Clone() {
             gap: '16px',
           }}>
             {highlightProjects.map((project, idx) => (
+              <Link key={project.id} to={`/projects/${project.slug}`} style={{ textDecoration: 'none' }}>
               <motion.div
-                key={project.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -1332,6 +1336,7 @@ export default function Clone() {
                   </div>
                 )}
               </motion.div>
+              </Link>
             ))}
           </div>
         )}
@@ -1399,8 +1404,8 @@ export default function Clone() {
               "Stories, experiments, and the occasional overthought essay — written by the people actually doing the work."
             </p>
           </div>
-          <motion.a
-            href="#"
+          <Link to="/blog" style={{ textDecoration: 'none' }}>
+          <motion.span
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             style={{
@@ -1419,7 +1424,8 @@ export default function Clone() {
             }}
           >
             Discover more blogs <ArrowRight color="#f7f5f0" size={13} />
-          </motion.a>
+          </motion.span>
+          </Link>
         </motion.div>
 
         {/* Loading state */}
@@ -1439,8 +1445,8 @@ export default function Clone() {
             gap: '24px',
           }}>
             {teaserBlogs.map((post, idx) => (
+              <Link key={post.id} to={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
               <motion.div
-                key={post.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -1512,6 +1518,7 @@ export default function Clone() {
                   )}
                 </div>
               </motion.div>
+              </Link>
             ))}
           </div>
         )}
@@ -1937,8 +1944,8 @@ export default function Clone() {
             }}>
               Because making the world better begins with the one small step you take today.
             </p>
-            <a
-              href="#"
+            <Link
+              to="/about"
               style={{
                 fontFamily: "'Neutral Face Bold', sans-serif",
                 fontWeight: 700,
@@ -1953,7 +1960,7 @@ export default function Clone() {
               onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
             >
               Our story <ArrowRight color="#255c3b" size={14} />
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -2169,8 +2176,8 @@ export default function Clone() {
           }}>
             Join the community that's building something real — one project, one event, one idea at a time.
           </p>
-          <motion.a
-            href="#"
+          <Link to="/contact" style={{ textDecoration: 'none' }}>
+          <motion.span
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             style={{
@@ -2188,7 +2195,8 @@ export default function Clone() {
             }}
           >
             Be a part <ArrowRight color="#f7f5f0" size={15} />
-          </motion.a>
+          </motion.span>
+          </Link>
         </motion.div>
       </section>
 
@@ -2217,8 +2225,8 @@ export default function Clone() {
             }}>
               join the community
             </p>
-            <motion.a
-              href="#"
+            <Link to="/contact" style={{ textDecoration: 'none' }}>
+            <motion.span
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               style={{
@@ -2236,10 +2244,11 @@ export default function Clone() {
               }}
             >
               Be a part <ArrowRight color="#f7f5f0" size={14} />
-            </motion.a>
+            </motion.span>
+            </Link>
             <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {['Home', 'Contact Us', 'Collaborate with us', 'Support Us'].map(link => (
-                <a key={link} href="#" style={{
+              {([['Home', '/'], ['Contact Us', '/contact'], ['Collaborate with us', '/collaborations'], ['Support Us', '/support']] as [string, string][]).map(([label, path]) => (
+                <Link key={label} to={path} style={{
                   fontFamily: "'Neutral Face Regular', sans-serif",
                   fontSize: '14px',
                   color: 'rgba(247,245,240,0.6)',
@@ -2248,16 +2257,16 @@ export default function Clone() {
                   onMouseEnter={e => (e.currentTarget.style.color = '#f7f5f0')}
                   onMouseLeave={e => (e.currentTarget.style.color = 'rgba(247,245,240,0.6)')}
                 >
-                  {link}
-                </a>
+                  {label}
+                </Link>
               ))}
             </div>
             {/* Social icons */}
             <div style={{ marginTop: '24px', display: 'flex', gap: '16px' }}>
-              <a href="#" style={{ opacity: 0.7 }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}>
+              <a href="https://www.instagram.com/aquaterra.kolkata/" target="_blank" rel="noopener noreferrer" style={{ opacity: 0.7 }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}>
                 <InstagramIcon size={20} />
               </a>
-              <a href="#" style={{ opacity: 0.7 }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}>
+              <a href="https://www.linkedin.com/company/aquaterra-ngo/" target="_blank" rel="noopener noreferrer" style={{ opacity: 0.7 }} onMouseEnter={e => (e.currentTarget.style.opacity = '1')} onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}>
                 <LinkedInIcon size={20} />
               </a>
             </div>
@@ -2278,9 +2287,9 @@ export default function Clone() {
             </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
               {featuredProjects.map(project => (
-                <a
+                <Link
                   key={project}
-                  href="#"
+                  to="/projects"
                   style={{
                     fontFamily: "'Neutral Face Regular', sans-serif",
                     fontSize: '13px',
@@ -2296,7 +2305,7 @@ export default function Clone() {
                   onMouseLeave={e => (e.currentTarget.style.color = 'rgba(247,245,240,0.65)')}
                 >
                   {project}
-                </a>
+                </Link>
               ))}
             </div>
 
@@ -2314,9 +2323,9 @@ export default function Clone() {
             </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {footerBlogLinks.map(title => (
-                <a
+                <Link
                   key={title}
-                  href="#"
+                  to="/blog"
                   style={{
                     fontFamily: "'Neutral Face Regular', sans-serif",
                     fontSize: '12px',
@@ -2327,7 +2336,7 @@ export default function Clone() {
                   onMouseLeave={e => (e.currentTarget.style.color = 'rgba(247,245,240,0.55)')}
                 >
                   {title}
-                </a>
+                </Link>
               ))}
             </div>
 

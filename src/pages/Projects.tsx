@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { supabase, type WelfareProject, OBJECTIVES, type ObjectiveFilter } from '../lib/supabase'
 import Nav from '../components/Nav'
@@ -110,11 +110,14 @@ function SkeletonCard() {
 }
 
 export default function Projects() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [allProjects, setAllProjects] = useState<WelfareProject[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<ObjectiveFilter>('All')
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(0)
+
+  // State lives in URL so filters are bookmarkable & shareable
+  const filter = (searchParams.get('filter') as ObjectiveFilter) ?? 'All'
+  const search = searchParams.get('q') ?? ''
+  const page = parseInt(searchParams.get('page') ?? '0', 10)
 
   useEffect(() => {
     supabase
@@ -129,14 +132,16 @@ export default function Projects() {
   }, [])
 
   const handleFilterChange = useCallback((f: ObjectiveFilter) => {
-    setFilter(f)
-    setPage(0)
-  }, [])
+    setSearchParams(p => { p.set('filter', f); p.delete('page'); return p })
+  }, [setSearchParams])
 
   const handleSearchChange = useCallback((v: string) => {
-    setSearch(v)
-    setPage(0)
-  }, [])
+    setSearchParams(p => { if (v) p.set('q', v); else p.delete('q'); p.delete('page'); return p })
+  }, [setSearchParams])
+
+  const setPage = useCallback((n: number) => {
+    setSearchParams(p => { if (n) p.set('page', String(n)); else p.delete('page'); return p })
+  }, [setSearchParams])
 
   const filtered = useMemo(() => {
     let list = allProjects
@@ -354,7 +359,6 @@ export default function Projects() {
               fontSize: '13px',
               fontFamily: "'Neutral Face Regular', sans-serif",
               color: '#f7f5f0',
-              outline: 'none',
             }}
           />
         </div>
@@ -402,7 +406,7 @@ export default function Projects() {
           >
             No projects match your search.{' '}
             <button
-              onClick={() => { setFilter('All'); setSearch(''); setPage(0) }}
+              onClick={() => { handleFilterChange('All'); handleSearchChange(''); setPage(0) }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -665,7 +669,7 @@ export default function Projects() {
             }}
           >
             <motion.button
-              onClick={() => setPage(p => Math.max(0, p - 1))}
+              onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
               whileTap={{ scale: 0.96 }}
               style={{
@@ -713,7 +717,7 @@ export default function Projects() {
             )}
 
             <motion.button
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
               disabled={page === totalPages - 1}
               whileTap={{ scale: 0.96 }}
               style={{
