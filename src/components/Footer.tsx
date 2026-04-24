@@ -49,8 +49,9 @@ const pageLinks = [
   { label: 'About Us', path: '/about' },
   { label: 'Collaborations', path: '/collaborations' },
   { label: 'Support Us', path: '/support' },
+  { label: 'Volunteer', path: '/volunteer' },
   { label: 'Links', path: '/links' },
-  { label: 'Contact / Join', path: '/contact' },
+  { label: 'Contact', path: '/contact' },
 ]
 
 export default function Footer() {

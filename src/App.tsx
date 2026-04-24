@@ -10,6 +10,9 @@ import Collaborations from './pages/Collaborations'
 import SupportUs from './pages/SupportUs'
 import Links from './pages/Links'
 import NotFound from './pages/NotFound'
+import VolunteerHandbook from './pages/VolunteerHandbook'
+import VolunteerApply from './pages/VolunteerApply'
+import VolunteerThankYou from './pages/VolunteerThankYou'
 
 export default function App() {
   return (
@@ -25,6 +28,9 @@ export default function App() {
         <Route path="/collaborations" element={<Collaborations />} />
         <Route path="/support" element={<SupportUs />} />
         <Route path="/links" element={<Links />} />
+        <Route path="/volunteer" element={<VolunteerHandbook />} />
+        <Route path="/volunteer/apply" element={<VolunteerApply />} />
+        <Route path="/volunteer/thank-you" element={<VolunteerThankYou />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

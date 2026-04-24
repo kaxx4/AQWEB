@@ -317,7 +317,7 @@ export default function Clone() {
   useEffect(() => {
     supabase
       .from('welfare_projects')
-      .select('id,slug,is_draft,header,featured,location,key_statistic,workshop_date,objective,volunteers,google_drive_link,status')
+      .select('id,slug,is_draft,header,featured,location,key_statistic,workshop_date,objective,volunteers,google_drive_link,status,main_image,main_image_alt,collab_logo,collab_name,short_summary')
       .eq('is_draft', false)
       .order('workshop_date', { ascending: false })
       .then(({ data, error }) => {
@@ -503,12 +503,12 @@ export default function Clone() {
           >
             <LinkedInIcon size={20} />
           </a>
-          <Link to="/contact" style={{ textDecoration: 'none' }}>
+          <Link to="/volunteer/apply" style={{ textDecoration: 'none' }}>
             <motion.span
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               style={{
-                background: '#ffffff',
+                background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
                 color: '#0a0a0a',
                 borderRadius: '39px',
                 padding: '8px 16px',
@@ -522,7 +522,7 @@ export default function Clone() {
                 cursor: 'pointer',
               }}
             >
-              be a part
+              Join Us →
             </motion.span>
           </Link>
         </div>
@@ -748,7 +748,7 @@ export default function Clone() {
             }}>
               "LoR's and Certificates for the best"
             </p>
-            <Link to="/contact" style={{ textDecoration: 'none' }}>
+            <Link to="/volunteer/apply" style={{ textDecoration: 'none' }}>
             <motion.span
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
@@ -1203,28 +1203,36 @@ export default function Clone() {
                   flexDirection: 'column',
                 }}
               >
-                {/* Coloured header band */}
-                <div style={{
-                  borderRadius: '16px',
-                  marginBottom: '16px',
-                  height: '100px',
-                  background: `linear-gradient(135deg, ${getObjColor(project.objective)}22, ${getObjColor(project.objective)}44)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '12px',
-                }}>
-                  <span style={{
-                    fontFamily: "'Neutral Face Bold', sans-serif",
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    color: getObjColor(project.objective),
-                    textAlign: 'center',
-                    lineHeight: '1.4',
-                    letterSpacing: '-0.2px',
-                  }}>
-                    {project.key_statistic ?? project.objective}
-                  </span>
+                {/* Project image header */}
+                <div style={{ borderRadius: '16px', marginBottom: '16px', height: '120px', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                  <img
+                    src={project.main_image || `/images/initiative-${(project.id % 43) + 1}.png`}
+                    alt={project.main_image_alt ?? project.header}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }}
+                    onError={e => { (e.target as HTMLImageElement).src = `/images/initiative-${(project.id % 43) + 1}.png` }}
+                  />
+                  {/* Collab logo badge */}
+                  {project.collab_logo && (
+                    <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(6px)', borderRadius: '8px', padding: '4px 6px' }}>
+                      <img src={project.collab_logo} alt={project.collab_name ?? ''} style={{ maxWidth: '40px', maxHeight: '22px', objectFit: 'contain', display: 'block' }} />
+                    </div>
+                  )}
+                  {/* Objective pill overlay */}
+                  <div style={{ position: 'absolute', bottom: 8, left: 8 }}>
+                    <span style={{
+                      fontFamily: "'Neutral Face Bold', sans-serif",
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      background: getObjColor(project.objective),
+                      borderRadius: '6px',
+                      padding: '3px 8px',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}>
+                      {project.objective ?? 'Project'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Objective badge */}
@@ -2176,7 +2184,7 @@ export default function Clone() {
           }}>
             Join the community that's building something real — one project, one event, one idea at a time.
           </p>
-          <Link to="/contact" style={{ textDecoration: 'none' }}>
+          <Link to="/volunteer/apply" style={{ textDecoration: 'none' }}>
           <motion.span
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
@@ -2225,13 +2233,13 @@ export default function Clone() {
             }}>
               join the community
             </p>
-            <Link to="/contact" style={{ textDecoration: 'none' }}>
+            <Link to="/volunteer/apply" style={{ textDecoration: 'none' }}>
             <motion.span
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               style={{
-                background: '#255c3b',
-                color: '#f7f5f0',
+                background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
+                color: '#0a0a0a',
                 borderRadius: '39px',
                 padding: '12px 22px',
                 fontSize: '14px',
@@ -2243,7 +2251,7 @@ export default function Clone() {
                 gap: '6px',
               }}
             >
-              Be a part <ArrowRight color="#f7f5f0" size={14} />
+              Join Us → <ArrowRight color="#0a0a0a" size={14} />
             </motion.span>
             </Link>
             <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

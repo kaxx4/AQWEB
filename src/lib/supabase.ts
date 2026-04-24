@@ -66,6 +66,35 @@ export interface Blog {
   featured_image: string | null
 }
 
+export interface CollaborationSubmission {
+  id?: number
+  created_at?: string
+  org_name: string
+  contact_name: string
+  email: string
+  phone?: string | null
+  collab_type?: string | null
+  message: string
+  status?: string
+}
+
+export interface VolunteerApplication {
+  id?: number
+  created_at?: string
+  full_name: string
+  email: string
+  phone?: string | null
+  age?: string | null
+  college?: string | null
+  year_of_study?: string | null
+  interests?: string[] | null
+  availability?: string | null
+  why_aquaterra: string
+  previous_experience?: string | null
+  instagram_handle?: string | null
+  status?: string
+}
+
 export const OBJECTIVES = [
   'All',
   'Workshop',

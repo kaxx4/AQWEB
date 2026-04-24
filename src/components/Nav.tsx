@@ -64,6 +64,7 @@ const navLinks = [
   { label: 'About', path: '/about' },
   { label: 'Collabs', path: '/collaborations' },
   { label: 'Support', path: '/support' },
+  { label: 'Volunteer', path: '/volunteer' },
   { label: 'Contact', path: '/contact' },
 ]
 
@@ -176,9 +177,9 @@ export default function Nav() {
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            onClick={() => navigate('/contact')}
+            onClick={() => navigate('/volunteer/apply')}
             style={{
-              background: '#4cb8d4',
+              background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
               color: '#0a0a0a',
               borderRadius: '39px',
               padding: '8px 18px',
@@ -194,7 +195,7 @@ export default function Nav() {
               whiteSpace: 'nowrap',
             }}
           >
-            Join Us
+            Join Us →
           </motion.button>
 
           {/* Hamburger */}
@@ -309,7 +310,7 @@ export default function Nav() {
             >
               <motion.button
                 whileTap={{ scale: 0.96 }}
-                onClick={() => { navigate('/contact'); setMobileOpen(false) }}
+                onClick={() => { navigate('/volunteer/apply'); setMobileOpen(false) }}
                 style={{
                   width: '100%',
                   background: 'linear-gradient(135deg, #54d186, #4cb8d4)',

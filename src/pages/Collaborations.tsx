@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import Nav from '../components/Nav'
 import Footer from '../components/Footer'
-import { supabase } from '../lib/supabase'
+import { supabase, type CollaborationSubmission } from '../lib/supabase'
 
 interface CollabPartner {
   collab_name: string
@@ -23,10 +23,71 @@ const cardVariant = {
   show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.45 } },
 }
 
+const COLLAB_TYPES = [
+  'Co-hosted Event',
+  'Donation Drive',
+  'Educational Workshop',
+  'Sponsorship',
+  'Media / Press',
+  'Research / Academic',
+  'Other',
+]
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: '12px',
+  padding: '14px 16px',
+  fontSize: '15px',
+  fontFamily: "'Neutral Face Regular', sans-serif",
+  color: '#f7f5f0',
+  outline: 'none',
+  transition: 'border-color 0.2s',
+  boxSizing: 'border-box',
+}
+
 export default function Collaborations() {
   const [partners, setPartners] = useState<CollabPartner[]>([])
   const [loading, setLoading] = useState(true)
   const [projectCount, setProjectCount] = useState<number | null>(null)
+
+  // Form state
+  const [form, setForm] = useState<CollaborationSubmission>({
+    org_name: '', contact_name: '', email: '', phone: '', collab_type: '', message: '',
+  })
+  const [formSubmitting, setFormSubmitting] = useState(false)
+  const [formSuccess, setFormSuccess] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const formRef = useRef<HTMLDivElement>(null)
+
+  const handleFormChange = (field: keyof CollaborationSubmission, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.org_name.trim() || !form.contact_name.trim() || !form.email.trim() || !form.message.trim()) {
+      setFormError('Please fill in all required fields.')
+      return
+    }
+    setFormSubmitting(true)
+    setFormError(null)
+    const { error } = await supabase.from('collaboration_submissions').insert({
+      org_name: form.org_name.trim(),
+      contact_name: form.contact_name.trim(),
+      email: form.email.trim(),
+      phone: form.phone?.trim() || null,
+      collab_type: form.collab_type?.trim() || null,
+      message: form.message.trim(),
+    })
+    setFormSubmitting(false)
+    if (error) {
+      setFormError('Something went wrong. Try emailing us directly at ngo.aquaterra@gmail.com')
+    } else {
+      setFormSuccess(true)
+    }
+  }
 
   useEffect(() => {
     supabase
@@ -333,6 +394,192 @@ export default function Collaborations() {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* ── Collaboration Form ── */}
+      <section style={{ padding: '0 64px 80px', maxWidth: '1200px', margin: '0 auto' }} ref={formRef}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          style={{
+            background: 'rgba(76,184,212,0.04)',
+            border: '1px solid rgba(76,184,212,0.15)',
+            borderRadius: '28px',
+            padding: '64px 72px',
+          }}
+        >
+          <p style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: '#4cb8d4', marginBottom: '16px' }}>
+            Work With Us
+          </p>
+          <h2 style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: 'clamp(28px, 4vw, 44px)', color: '#f7f5f0', marginBottom: '12px', letterSpacing: '-0.5px', textWrap: 'balance' } as React.CSSProperties}>
+            Want to collaborate?
+          </h2>
+          <p style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '16px', color: 'rgba(247,245,240,0.55)', lineHeight: 1.7, margin: '0 0 48px', maxWidth: '520px' }}>
+            Tell us about your organisation. We'll get back to you within 48 hours.
+          </p>
+
+          {formSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{ textAlign: 'center', padding: '48px 0' }}
+            >
+              <div style={{ fontSize: '56px', marginBottom: '20px' }}>🤝</div>
+              <h3 style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '24px', color: '#f7f5f0', marginBottom: '12px' }}>We got your message!</h3>
+              <p style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: 'rgba(247,245,240,0.55)', lineHeight: 1.7, maxWidth: '400px', margin: '0 auto' }}>
+                Our team will review your collaboration request and get back to you within 48 hours. Keep an eye on your inbox.
+              </p>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleFormSubmit} noValidate>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                <div>
+                  <label htmlFor="collab-org" style={{ display: 'block', fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Organisation Name *
+                  </label>
+                  <input
+                    id="collab-org"
+                    type="text"
+                    required
+                    placeholder="Your NGO / Club / Company"
+                    value={form.org_name}
+                    onChange={e => handleFormChange('org_name', e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(76,184,212,0.5)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="collab-contact" style={{ display: 'block', fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Your Name *
+                  </label>
+                  <input
+                    id="collab-contact"
+                    type="text"
+                    required
+                    placeholder="Point of contact"
+                    value={form.contact_name}
+                    onChange={e => handleFormChange('contact_name', e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(76,184,212,0.5)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="collab-email" style={{ display: 'block', fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Email *
+                  </label>
+                  <input
+                    id="collab-email"
+                    type="email"
+                    required
+                    placeholder="your@email.com"
+                    value={form.email}
+                    onChange={e => handleFormChange('email', e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(76,184,212,0.5)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="collab-phone" style={{ display: 'block', fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Phone (optional)
+                  </label>
+                  <input
+                    id="collab-phone"
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={form.phone ?? ''}
+                    onChange={e => handleFormChange('phone', e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(76,184,212,0.5)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                  />
+                </div>
+              </div>
+
+              {/* Collab type pills */}
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
+                  Type of Collaboration
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {COLLAB_TYPES.map(type => (
+                    <motion.button
+                      key={type}
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => handleFormChange('collab_type', form.collab_type === type ? '' : type)}
+                      style={{
+                        background: form.collab_type === type ? 'rgba(76,184,212,0.2)' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${form.collab_type === type ? 'rgba(76,184,212,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                        borderRadius: '999px',
+                        padding: '7px 16px',
+                        fontFamily: "'Neutral Face Regular', sans-serif",
+                        fontSize: '13px',
+                        color: form.collab_type === type ? '#4cb8d4' : 'rgba(247,245,240,0.65)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {type}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message */}
+              <div style={{ marginBottom: '24px' }}>
+                <label htmlFor="collab-message" style={{ display: 'block', fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.6)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Tell us about the collaboration *
+                </label>
+                <textarea
+                  id="collab-message"
+                  required
+                  rows={5}
+                  placeholder="What do you have in mind? Share your idea, your organisation's mission, and what you're hoping to build together."
+                  value={form.message}
+                  onChange={e => handleFormChange('message', e.target.value)}
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: '130px' }}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(76,184,212,0.5)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                />
+              </div>
+
+              {formError && (
+                <p style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '14px', color: '#ef5350', marginBottom: '16px' }}>
+                  {formError}
+                </p>
+              )}
+
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                disabled={formSubmitting}
+                style={{
+                  background: formSubmitting ? 'rgba(76,184,212,0.4)' : 'linear-gradient(135deg, #4cb8d4, #54d186)',
+                  color: '#0a0a0a',
+                  border: 'none',
+                  borderRadius: '39px',
+                  padding: '16px 40px',
+                  fontFamily: "'Neutral Face Bold', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '15px',
+                  cursor: formSubmitting ? 'not-allowed' : 'pointer',
+                  letterSpacing: '0.03em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                {formSubmitting ? 'Sending...' : 'Send Collaboration Request →'}
+              </motion.button>
+            </form>
+          )}
+        </motion.div>
       </section>
 
       {/* Become a partner CTA */}
