@@ -109,10 +109,21 @@ function SkeletonCard() {
   )
 }
 
+function useIsMobile(bp = 768) {
+  const [m, setM] = useState(() => window.innerWidth < bp)
+  useEffect(() => {
+    const h = () => setM(window.innerWidth < bp)
+    window.addEventListener('resize', h, { passive: true })
+    return () => window.removeEventListener('resize', h)
+  }, [bp])
+  return m
+}
+
 export default function Projects() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [allProjects, setAllProjects] = useState<WelfareProject[]>([])
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   // State lives in URL so filters are bookmarkable & shareable
   const filter = (searchParams.get('filter') as ObjectiveFilter) ?? 'All'
@@ -191,8 +202,8 @@ export default function Projects() {
           background: '#0a0a0a',
           paddingTop: '120px',
           paddingBottom: '80px',
-          paddingLeft: '64px',
-          paddingRight: '64px',
+          paddingLeft: isMobile ? '20px' : '64px',
+          paddingRight: isMobile ? '20px' : '64px',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -285,7 +296,7 @@ export default function Projects() {
       {/* ── Filters ── */}
       <section
         style={{
-          padding: '0 64px 40px',
+          padding: isMobile ? '0 16px 24px' : '0 64px 40px',
           position: 'sticky',
           top: '64px',
           zIndex: 40,
@@ -365,7 +376,7 @@ export default function Projects() {
       </section>
 
       {/* ── Results count ── */}
-      <section style={{ padding: '28px 64px 8px' }}>
+      <section style={{ padding: isMobile ? '16px 16px 8px' : '28px 64px 8px' }}>
         <p
           style={{
             fontFamily: "'Neutral Face Regular', sans-serif",
@@ -381,12 +392,12 @@ export default function Projects() {
       </section>
 
       {/* ── Grid ── */}
-      <section style={{ padding: '8px 64px 80px' }}>
+      <section style={{ padding: isMobile ? '8px 16px 60px' : '8px 64px 80px' }}>
         {loading ? (
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: '20px',
             }}
           >
@@ -429,7 +440,7 @@ export default function Projects() {
               exit={{ opacity: 0, y: -12, filter: 'blur(4px)', transition: { duration: 0.15 } }}
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
                 gap: '20px',
               }}
             >

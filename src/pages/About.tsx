@@ -201,7 +201,7 @@ export default function About() {
                       src={`/images/community-photo-${event.photo}.jpg`}
                       alt={event.year}
                       style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(0,0,0,0.1)', outlineOffset: '-1px' }}
-                      onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
+                      onError={e => { (e.target as HTMLImageElement).src = `/images/initiative-${(event.photo * 7) % 43 + 1}.png` }}
                     />
                   </div>
                 </div>
@@ -360,7 +360,7 @@ export default function About() {
                   src={`/images/community-photo-${stat.photo}.jpg`}
                   alt={stat.label}
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }}
-                  onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
+                  onError={e => { (e.target as HTMLImageElement).src = `/images/initiative-${(stat.photo * 9) % 43 + 1}.png` }}
                 />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 100%)', zIndex: 1 }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>

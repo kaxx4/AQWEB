@@ -1,7 +1,42 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useInView } from 'motion/react'
 import { supabase, type WelfareProject, type Blog, OBJECTIVES, type ObjectiveFilter } from '../lib/supabase'
+import Nav from '../components/Nav'
+
+// ============================================
+// RESPONSIVE HOOK
+// ============================================
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler, { passive: true })
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
+// ============================================
+// COUNT-UP HOOK — animates numbers in-view
+// ============================================
+function useCountUp(target: number, duration = 1800) {
+  const [count, setCount] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+  useEffect(() => {
+    if (!inView) return
+    const start = performance.now()
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const ease = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      setCount(Math.floor(ease * target))
+      if (progress < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }, [inView, target, duration])
+  return { count, ref }
+}
 
 // ============================================
 // ARROW RIGHT ICON
@@ -94,14 +129,47 @@ function AquaTerraLogo({ fontSize = 18 }: { fontSize?: number }) {
 // IMPACT STATS DATA
 // ============================================
 const impactStats = [
-  { number: '3,500+', line1: 'KIDS', line2: 'across educational workshops' },
-  { number: '4,000+', line1: 'saplings', line2: 'planted' },
-  { number: '1,600+', line1: 'medical', line2: 'checkups conducted' },
-  { number: '2,500+', line1: 'attendees', line2: 'across events' },
-  { number: '500+', line1: 'campaigns', line2: 'and projects' },
-  { number: '1,500+', line1: 'dogs fed', line2: '' },
-  { number: '2,500+ KGS', line1: 'clothes', line2: 'distributed & recycled' },
+  { number: '3,500+', raw: 3500, line1: 'KIDS', line2: 'across educational workshops' },
+  { number: '4,000+', raw: 4000, line1: 'saplings', line2: 'planted' },
+  { number: '1,600+', raw: 1600, line1: 'medical', line2: 'checkups conducted' },
+  { number: '2,500+', raw: 2500, line1: 'attendees', line2: 'across events' },
+  { number: '500+',   raw: 500,  line1: 'campaigns', line2: 'and projects' },
+  { number: '1,500+', raw: 1500, line1: 'dogs fed', line2: '' },
+  { number: '2,500+', raw: 2500, line1: 'clothes KGS', line2: 'distributed & recycled' },
 ] as const
+
+// ============================================
+// ANIMATED COUNT STAT BLOCK
+// ============================================
+function CountStat({ raw, suffix = '+', line1, line2, fontSize = '56px' }: {
+  raw: number; suffix?: string; line1: string; line2: string; fontSize?: string
+}) {
+  const { count, ref } = useCountUp(raw, 1600)
+  return (
+    <div ref={ref}>
+      <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize, color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
+        {count.toLocaleString('en-IN')}{suffix}
+      </div>
+      <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{line1}</div>
+      {line2 && <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{line2}</div>}
+    </div>
+  )
+}
+
+// ============================================
+// CTA STAT — small inline count-up for Join Us section
+// ============================================
+function CtaStat({ raw, suffix = '', label }: { raw: number; suffix?: string; label: string }) {
+  const { count, ref } = useCountUp(raw, 1200)
+  return (
+    <div ref={ref} style={{ borderLeft: '2px solid rgba(255,255,255,0.35)', paddingLeft: '20px' }}>
+      <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '28px', color: '#f7f5f0', letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>
+        {count.toLocaleString('en-IN')}{suffix}
+      </div>
+      <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.8)', letterSpacing: '0.03em' }}>{label}</div>
+    </div>
+  )
+}
 
 // ============================================
 // BUBBLE DIAGRAM DATA
@@ -300,6 +368,7 @@ function useStarDots(count: number): StarDot[] {
 export default function Clone() {
   const [selectedBubble, setSelectedBubble] = useState<string | null>(null)
   const starDots = useStarDots(80)
+  const isMobile = useIsMobile()
 
   // ─── Supabase: live projects ───────────────────────────────────────
   const [allProjects, setAllProjects] = useState<WelfareProject[]>([])
@@ -373,8 +442,8 @@ export default function Clone() {
   )
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PROJECT_PAGE_SIZE))
 
-  // Recent 12 for the highlights section
-  const highlightProjects = useMemo(() => allProjects.slice(0, 12), [allProjects])
+  // Recent 12 for highlights (6 on mobile to keep page manageable)
+  const highlightProjects = useMemo(() => allProjects.slice(0, isMobile ? 6 : 12), [allProjects, isMobile])
 
   // Latest 3 blogs for the section teaser
   const teaserBlogs = useMemo(() => liveBlogs.slice(0, 3), [liveBlogs])
@@ -405,128 +474,43 @@ export default function Clone() {
       {/* ============================================
           GET IN TOUCH — FIXED STICKY BUTTON
           ============================================ */}
-      <motion.a
-        href="#footer"
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
-        style={{
-          position: 'fixed',
-          right: '-34px',
-          bottom: '50%',
-          transform: 'translateY(50%) rotate(-90deg)',
-          transformOrigin: 'center',
-          zIndex: 100,
-          background: '#171717',
-          color: '#f7f5f0',
-          borderRadius: '39px',
-          padding: '10px 20px',
-          fontSize: '12px',
-          fontFamily: "'Neutral Face Bold', sans-serif",
-          fontWeight: 700,
-          letterSpacing: '0.05em',
-          textDecoration: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-        }}
-      >
-        Get in touch
-      </motion.a>
+      {/* Get in touch — hidden on mobile to avoid clutter */}
+      {!isMobile && (
+        <motion.a
+          href="#footer"
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            position: 'fixed',
+            right: '-34px',
+            bottom: '50%',
+            transform: 'translateY(50%) rotate(-90deg)',
+            transformOrigin: 'center',
+            zIndex: 100,
+            background: '#171717',
+            color: '#f7f5f0',
+            borderRadius: '39px',
+            padding: '10px 20px',
+            fontSize: '12px',
+            fontFamily: "'Neutral Face Bold', sans-serif",
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+          }}
+        >
+          Get in touch
+        </motion.a>
+      )}
 
       {/* ============================================
-          NAVIGATION
+          NAVIGATION — shared Nav component (responsive, hamburger on mobile)
           ============================================ */}
-      <nav
-        style={{
-          position: 'fixed',
-          top: '10px',
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 32px',
-          height: '61px',
-          background: 'transparent',
-        }}
-      >
-        {/* Logo */}
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-          <AquaTerraLogo fontSize={18} />
-        </Link>
-
-        {/* Nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          <Link
-            to="/"
-            style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '14px', color: '#ffffff', textDecoration: 'none', opacity: 0.9 }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
-          >
-            🏠
-          </Link>
-          {([['EVERYTHING WE DO', '#everything-we-do'], ['Projects', '/projects'], ['Blogs', '/blog'], ['Support Us', '/support'], ['Quick Links', '/links']] as [string, string][]).map(([label, href]) => (
-            href.startsWith('/') ? (
-              <Link
-                key={label}
-                to={href}
-                style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '14px', color: '#ffffff', textDecoration: 'none', opacity: 0.9 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
-              >{label}</Link>
-            ) : (
-              <a
-                key={label}
-                href={href}
-                style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '14px', color: '#ffffff', textDecoration: 'none', opacity: 0.9 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.9')}
-              >{label}</a>
-            )
-          ))}
-        </div>
-
-        {/* Right side: social icons + CTA */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <a href="https://www.instagram.com/ngo.aquaterra" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
-          >
-            <InstagramIcon size={20} />
-          </a>
-          <a href="https://www.linkedin.com/company/aquaterra-ngo" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
-          >
-            <LinkedInIcon size={20} />
-          </a>
-          <Link to="/volunteer/apply" style={{ textDecoration: 'none' }}>
-            <motion.span
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                background: 'linear-gradient(135deg, #54d186, #4cb8d4)',
-                color: '#0a0a0a',
-                borderRadius: '39px',
-                padding: '8px 16px',
-                fontSize: '12px',
-                fontFamily: "'Neutral Face Bold', sans-serif",
-                fontWeight: 700,
-                letterSpacing: '0.02em',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-              }}
-            >
-              Join Us →
-            </motion.span>
-          </Link>
-        </div>
-      </nav>
+      <Nav />
 
       {/* ============================================
           HERO SECTION
@@ -576,7 +560,7 @@ export default function Clone() {
         })}
 
         {/* Center content */}
-        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 20px', maxWidth: '820px', width: '100%' }}>
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: isMobile ? '0 24px' : '0 20px', maxWidth: '820px', width: '100%' }}>
           {/* Badge above headline */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -654,6 +638,10 @@ export default function Clone() {
             transform: 'translateX(-50%)',
             zIndex: 2,
             textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '14px',
           }}
         >
           <span style={{
@@ -665,7 +653,30 @@ export default function Clone() {
           }}>
             DARPAN Certified · Govt. of India Reg: AAFTT2300ME20251 · Est. July 2021
           </span>
+          {/* Animated scroll indicator */}
+          <motion.div
+            animate={{ y: [0, 8, 0], opacity: [0.4, 0.9, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}
+          >
+            <span style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '10px', color: 'rgba(247,245,240,0.45)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>scroll</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12l7 7 7-7" stroke="rgba(247,245,240,0.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </motion.div>
         </motion.div>
+
+        {/* Ambient glowing orbs */}
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.04, 0.1, 0.04] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ position: 'absolute', top: '20%', left: '10%', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(84,209,134,0.3) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }}
+        />
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.03, 0.08, 0.03] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          style={{ position: 'absolute', bottom: '20%', right: '8%', width: '350px', height: '350px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(76,184,212,0.3) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }}
+        />
       </section>
 
       {/* ============================================
@@ -679,13 +690,14 @@ export default function Clone() {
           transition={{ duration: 0.7, ease: 'easeOut' }}
           style={{
             background: '#4cb8d4',
-            borderRadius: '72px',
-            padding: '60px 80px',
+            borderRadius: isMobile ? '32px' : '72px',
+            padding: isMobile ? '40px 28px' : '60px 80px',
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
             justifyContent: 'space-between',
             gap: '40px',
-            minHeight: '377px',
+            minHeight: isMobile ? 'auto' : '377px',
             position: 'relative',
             overflow: 'hidden',
           }}
@@ -727,14 +739,14 @@ export default function Clone() {
             <h2 style={{
               fontFamily: "'Neutral Face Bold', sans-serif",
               fontWeight: 700,
-              fontSize: '64px',
+              fontSize: isMobile ? '40px' : '64px',
               color: '#f7f5f0',
               letterSpacing: '-2px',
-              lineHeight: '70px',
+              lineHeight: isMobile ? '44px' : '70px',
               margin: '0 0 20px',
               textWrap: 'balance',
             } as React.CSSProperties}>
-              jOIN US NOW
+              JOIN US NOW
             </h2>
             <p style={{
               fontFamily: "'Instrument Serif', serif",
@@ -750,20 +762,24 @@ export default function Clone() {
             </p>
             <Link to="/volunteer/apply" style={{ textDecoration: 'none' }}>
             <motion.span
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.04, boxShadow: '0 0 40px rgba(37,92,59,0.6)', filter: 'brightness(1.1)' }}
               whileTap={{ scale: 0.96 }}
               style={{
                 background: '#255c3b',
                 color: '#f7f5f0',
                 borderRadius: '39px',
-                padding: '14px 28px',
+                padding: '14px 32px',
                 fontSize: '14px',
-                fontFamily: "'Neutral Face Regular', sans-serif",
-                fontWeight: 400,
+                fontFamily: "'Neutral Face Bold', sans-serif",
+                fontWeight: 700,
                 textDecoration: 'none',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
+                letterSpacing: '0.04em',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'box-shadow 0.3s, filter 0.3s',
               }}
             >
               SIGN UP NOW <ArrowRight color="#f7f5f0" size={15} />
@@ -771,18 +787,11 @@ export default function Clone() {
             </Link>
           </div>
 
-          {/* Right — stats row */}
+          {/* Right — animated stats row */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '200px', position: 'relative', zIndex: 1 }}>
-            {[
-              { n: '1,000+', l: 'members' },
-              { n: '534', l: 'projects' },
-              { n: '4 years', l: 'running' },
-            ].map((s) => (
-              <div key={s.n} style={{ borderLeft: '2px solid rgba(255,255,255,0.35)', paddingLeft: '20px' }}>
-                <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '28px', color: '#f7f5f0', letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums' }}>{s.n}</div>
-                <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: 'rgba(247,245,240,0.8)', letterSpacing: '0.03em' }}>{s.l}</div>
-              </div>
-            ))}
+            <CtaStat raw={1000} suffix="+" label="members" />
+            <CtaStat raw={534}  suffix=""  label="projects" />
+            <CtaStat raw={4}    suffix=" yrs" label="running" />
           </div>
         </motion.div>
       </section>
@@ -790,7 +799,7 @@ export default function Clone() {
       {/* ============================================
           EVERYTHING WE DO — BUBBLE DIAGRAM SECTION
           ============================================ */}
-      <section style={{ background: '#0a0a0a', padding: '80px 64px' }}>
+      <section style={{ background: '#0a0a0a', padding: isMobile ? '48px 20px' : '80px 64px' }}>
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -811,7 +820,36 @@ export default function Clone() {
           </h2>
         </motion.div>
 
-        {/* Bubble Diagram */}
+        {/* Bubble Diagram — desktop orbital view, mobile pill grid */}
+        {isMobile ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', padding: '8px 0 16px' }}>
+            {bubbleItems.map((item, i) => (
+              <motion.button
+                key={item.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedBubble(selectedBubble === item.id ? null : item.id)}
+                style={{
+                  background: selectedBubble === item.id ? item.color : 'rgba(255,255,255,0.07)',
+                  border: `1px solid ${selectedBubble === item.id ? item.color : 'rgba(255,255,255,0.15)'}`,
+                  borderRadius: '999px',
+                  padding: '10px 18px',
+                  fontFamily: "'Neutral Face Bold', sans-serif",
+                  fontSize: '12px',
+                  color: '#f7f5f0',
+                  cursor: 'pointer',
+                  letterSpacing: '0.03em',
+                  transition: 'background 0.2s, border-color 0.2s',
+                }}
+              >
+                {item.label}
+              </motion.button>
+            ))}
+          </div>
+        ) : (
         <div style={{ position: 'relative', height: '600px', maxWidth: '900px', margin: '0 auto' }}>
           {/* Central dashed circle */}
           <div style={{
@@ -927,6 +965,7 @@ export default function Clone() {
             })()}
           </AnimatePresence>
         </div>
+        )}
       </section>
 
       {/* ============================================
@@ -936,7 +975,7 @@ export default function Clone() {
         background: '#b8e8c8',
         position: 'relative',
         overflow: 'hidden',
-        padding: '80px 0',
+        padding: isMobile ? '40px 0' : '80px 0',
       }}>
         {/* Top white→mint gradient */}
         <div style={{
@@ -957,7 +996,7 @@ export default function Clone() {
           zIndex: 1,
         }} />
 
-        <div style={{ position: 'relative', zIndex: 2, padding: '0 64px' }}>
+        <div style={{ position: 'relative', zIndex: 2, padding: isMobile ? '0 20px' : '0 64px' }}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -968,7 +1007,7 @@ export default function Clone() {
             <h2 style={{
               fontFamily: "'Neutral Face Bold', sans-serif",
               fontWeight: 700,
-              fontSize: '44px',
+              fontSize: isMobile ? '28px' : '44px',
               color: '#0a0a0a',
               letterSpacing: '-0.44px',
               margin: '0 0 16px',
@@ -987,7 +1026,23 @@ export default function Clone() {
             </p>
           </motion.div>
 
-          {/* Masonry-style stats grid interleaved with photos */}
+          {/* Stats grid — 2-col on mobile, interleaved photos on desktop */}
+          {isMobile ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px 16px', maxWidth: '480px', margin: '0 auto' }}>
+              {impactStats.map((s, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.07 }}
+                  style={{ borderLeft: '3px solid #255c3b', paddingLeft: '14px' }}
+                >
+                  <CountStat raw={s.raw} line1={s.line1} line2={s.line2} fontSize="36px" />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
@@ -997,131 +1052,44 @@ export default function Clone() {
             alignItems: 'center',
           }}>
             {/* Row 1: stat, photo, stat */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0 }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[0].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[0].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[0].line2}</div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0 }}>
+              <CountStat raw={impactStats[0].raw} line1={impactStats[0].line1} line2={impactStats[0].line2} />
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}
-            >
-              <img src="/images/event-photo-1.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}>
+              <img src="/images/event-photo-1.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `/images/initiative-${3}.png` }} />
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[1].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[1].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[1].line2}</div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2 }}>
+              <CountStat raw={impactStats[1].raw} line1={impactStats[1].line1} line2={impactStats[1].line2} />
             </motion.div>
 
             {/* Row 2: stat, stat, photo */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[2].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[2].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[2].line2}</div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }}>
+              <CountStat raw={impactStats[2].raw} line1={impactStats[2].line1} line2={impactStats[2].line2} />
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[3].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[3].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[3].line2}</div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2 }}>
+              <CountStat raw={impactStats[3].raw} line1={impactStats[3].line1} line2={impactStats[3].line2} />
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}
-            >
-              <img src="/images/event-photo-2.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.3 }} style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}>
+              <img src="/images/event-photo-2.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `/images/initiative-${8}.png` }} />
             </motion.div>
 
             {/* Row 3: photo, stat, stat */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}
-            >
-              <img src="/images/event-photo-3.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover', outline: '1px solid rgba(255,255,255,0.1)', outlineOffset: '-1px' }} onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2 }} style={{ borderRadius: '24px', overflow: 'hidden', aspectRatio: '4/3' }}>
+              <img src="/images/event-photo-3.jpg" alt="Event" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { (e.target as HTMLImageElement).src = `/images/initiative-${15}.png` }} />
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.3 }}>
+              <CountStat raw={impactStats[4].raw} line1={impactStats[4].line1} line2={impactStats[4].line2} />
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.4 }}>
+              <CountStat raw={impactStats[5].raw} line1={impactStats[5].line1} line2={impactStats[5].line2} />
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[4].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[4].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[4].line2}</div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[5].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[5].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[5].line2}</div>
-            </motion.div>
-
-            {/* Last stat spans full row — centered */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              style={{ gridColumn: '2' }}
-            >
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '56px', color: '#0a0a0a', lineHeight: 1, letterSpacing: '-1px', fontVariantNumeric: 'tabular-nums' }}>
-                {impactStats[6].number}
-              </div>
-              <div style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '18px', color: '#0a0a0a', marginTop: '4px' }}>{impactStats[6].line1}</div>
-              <div style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '15px', color: '#2a5a3a', marginTop: '2px' }}>{impactStats[6].line2}</div>
+            {/* Last stat centered */}
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.3 }} style={{ gridColumn: '2' }}>
+              <CountStat raw={impactStats[6].raw} line1={impactStats[6].line1} line2={impactStats[6].line2} />
             </motion.div>
           </div>
+          )}
 
           {/* Stats note */}
           <p style={{
@@ -1140,7 +1108,7 @@ export default function Clone() {
       {/* ============================================
           HIGHLIGHTS OF 500+ INITIATIVES SECTION
           ============================================ */}
-      <section style={{ background: '#b8e8c8', padding: '80px 64px' }}>
+      <section style={{ background: '#b8e8c8', padding: isMobile ? '48px 20px' : '80px 64px' }}>
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -1151,7 +1119,7 @@ export default function Clone() {
           <h2 style={{
             fontFamily: "'Neutral Face Bold', sans-serif",
             fontWeight: 700,
-            fontSize: '44px',
+            fontSize: isMobile ? '28px' : '44px',
             color: '#0a0a0a',
             letterSpacing: '-0.44px',
             margin: '0 0 16px',
@@ -1161,7 +1129,7 @@ export default function Clone() {
           <p style={{
             fontFamily: "'Instrument Serif', serif",
             fontStyle: 'italic',
-            fontSize: '18px',
+            fontSize: isMobile ? '16px' : '18px',
             color: '#2a5a3a',
             margin: 0,
           }}>
@@ -1171,7 +1139,7 @@ export default function Clone() {
 
         {/* Loading skeleton */}
         {projectsLoading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} style={{ background: '#d4f0dc', borderRadius: '24px', height: '260px', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))}
@@ -1182,7 +1150,7 @@ export default function Clone() {
         {!projectsLoading && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: '16px',
           }}>
             {highlightProjects.map((project, idx) => (
@@ -1300,49 +1268,24 @@ export default function Clone() {
                   </div>
                 )}
 
-                {/* Google Drive link if available */}
-                {project.google_drive_link ? (
-                  <motion.a
-                    href={project.google_drive_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    whileHover={{ opacity: 0.85 }}
-                    style={{
-                      background: getObjColor(project.objective),
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '10px',
-                      width: '100%',
-                      fontFamily: "'Neutral Face Bold', sans-serif",
-                      fontWeight: 700,
-                      fontSize: '12px',
-                      letterSpacing: '0.05em',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      textDecoration: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    VIEW PHOTOS <ArrowRight color="#ffffff" size={12} />
-                  </motion.a>
-                ) : (
-                  <div style={{
-                    background: '#f0f0f0',
-                    borderRadius: '8px',
-                    padding: '10px',
-                    textAlign: 'center',
-                    fontFamily: "'Neutral Face Regular', sans-serif",
-                    fontSize: '11px',
-                    color: '#a0a0a0',
-                    letterSpacing: '0.03em',
-                  }}>
-                    Photos coming soon
-                  </div>
-                )}
+                {/* View project CTA — no nested <a> since card is already a Link */}
+                <div style={{
+                  background: `${getObjColor(project.objective)}18`,
+                  border: `1px solid ${getObjColor(project.objective)}30`,
+                  borderRadius: '8px',
+                  padding: '9px',
+                  textAlign: 'center',
+                  fontFamily: "'Neutral Face Bold', sans-serif",
+                  fontSize: '11px',
+                  color: getObjColor(project.objective),
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                }}>
+                  VIEW PROJECT <ArrowRight color={getObjColor(project.objective)} size={11} />
+                </div>
               </motion.div>
               </Link>
             ))}
@@ -1438,7 +1381,7 @@ export default function Clone() {
 
         {/* Loading state */}
         {blogsLoading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '24px' }}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} style={{ background: '#ece8e4', borderRadius: '24px', height: '300px' }} />
             ))}
@@ -1449,7 +1392,7 @@ export default function Clone() {
         {!blogsLoading && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: '24px',
           }}>
             {teaserBlogs.map((post, idx) => (
@@ -1459,38 +1402,54 @@ export default function Clone() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.12 }}
-                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                whileHover={{ y: -6, boxShadow: '0 20px 60px rgba(62,139,194,0.15)', transition: { duration: 0.25 } }}
                 style={{
-                  background: '#f7f5f0',
+                  background: '#ffffff',
                   borderRadius: '24px',
                   padding: '20px',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                  transition: 'box-shadow 0.25s, transform 0.25s',
                 }}
               >
-                {/* Featured image */}
-                <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', aspectRatio: '16/10', background: '#e8e8e8', flexShrink: 0 }}>
+                {/* Featured image with hover zoom */}
+                <div style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '16px', aspectRatio: '16/10', background: '#e8f4fd', flexShrink: 0, position: 'relative' }}>
                   {post.featured_image ? (
-                    <img
+                    <motion.img
                       src={post.featured_image}
                       alt={post.headliner}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { (e.target as HTMLImageElement).src = '/images/blog-placeholder.jpg' }}
+                      whileHover={{ scale: 1.06 }}
+                      transition={{ duration: 0.4 }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      onError={e => { (e.target as HTMLImageElement).style.opacity = '0' }}
                     />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #3e8bc222, #3e8bc244)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '32px' }}>📖</span>
+                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #e8f4fd, #b8e8c8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>
+                      📖
                     </div>
+                  )}
+                  {/* Reading time badge */}
+                  {post.minutes_of_read && (
+                    <span style={{
+                      position: 'absolute', top: '10px', right: '10px',
+                      background: 'rgba(10,10,10,0.7)', backdropFilter: 'blur(6px)',
+                      color: '#f7f5f0', borderRadius: '999px', padding: '3px 9px',
+                      fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '10px',
+                    }}>
+                      {post.minutes_of_read} min
+                    </span>
                   )}
                 </div>
                 {/* Category pill */}
                 <span style={{
                   fontFamily: "'Neutral Face Bold', sans-serif",
-                  fontWeight: 700,
                   fontSize: '10px',
                   color: '#3e8bc2',
-                  background: 'rgba(62,139,194,0.1)',
+                  background: 'rgba(62,139,194,0.08)',
+                  border: '1px solid rgba(62,139,194,0.18)',
                   borderRadius: '20px',
                   padding: '3px 10px',
                   letterSpacing: '0.1em',
@@ -1504,26 +1463,24 @@ export default function Clone() {
                 <h3 style={{
                   fontFamily: "'Neutral Face Bold', sans-serif",
                   fontWeight: 700,
-                  fontSize: '18px',
-                  color: '#171717',
-                  letterSpacing: '-0.36px',
-                  margin: '0 0 12px',
+                  fontSize: '17px',
+                  color: '#0a0a0a',
+                  letterSpacing: '-0.3px',
+                  margin: '0 0 10px',
                   lineHeight: '1.4',
                   flex: 1,
                 }}>
                   {post.headliner}
                 </h3>
-                {/* Meta */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '13px', color: '#737373' }}>{post.written_by}</span>
-                  <span style={{ color: '#d4d4d4' }}>·</span>
-                  <span style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '13px', color: '#737373' }}>{formatDate(post.published_date)}</span>
-                  {post.minutes_of_read && (
-                    <>
-                      <span style={{ color: '#d4d4d4' }}>·</span>
-                      <span style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '13px', color: '#737373' }}>{post.minutes_of_read} min read</span>
-                    </>
-                  )}
+                {/* Meta + Read more */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {post.written_by && <span style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontSize: '13px', color: '#737373' }}>{post.written_by}</span>}
+                    {post.published_date && <><span style={{ color: '#d4d4d4' }}>·</span><span style={{ fontFamily: "'Neutral Face Regular', sans-serif", fontSize: '12px', color: '#a3a3a3' }}>{formatDate(post.published_date)}</span></>}
+                  </div>
+                  <span style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontSize: '12px', color: '#3e8bc2', whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>
+                    Read →
+                  </span>
                 </div>
               </motion.div>
               </Link>
@@ -1600,7 +1557,7 @@ export default function Clone() {
       {/* ============================================
           ALL PROJECTS BROWSER — LIVE DB SECTION
           ============================================ */}
-      <section id="projects-browser" style={{ background: '#0f1a0f', padding: '80px 64px' }}>
+      <section id="projects-browser" style={{ background: '#0f1a0f', padding: isMobile ? '48px 16px' : '80px 64px' }}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -1693,9 +1650,9 @@ export default function Clone() {
 
         {/* Projects grid */}
         {projectsLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} style={{ background: 'rgba(247,245,240,0.05)', borderRadius: '20px', height: '200px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '12px' }}>
+            {Array.from({ length: isMobile ? 6 : 12 }).map((_, i) => (
+              <div key={i} style={{ background: 'rgba(247,245,240,0.05)', borderRadius: '16px', height: '160px' }} />
             ))}
           </div>
         ) : (
@@ -1708,8 +1665,8 @@ export default function Clone() {
               transition={{ duration: 0.3 }}
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '16px',
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                gap: isMobile ? '10px' : '16px',
               }}
             >
               {pagedProjects.length === 0 ? (
@@ -1896,11 +1853,11 @@ export default function Clone() {
       {/* ============================================
           WE BELIEVE CHANGE — 2-COLUMN SECTION
           ============================================ */}
-      <section style={{ background: '#e8f4fd', padding: '80px 64px' }}>
+      <section style={{ background: '#e8f4fd', padding: isMobile ? '48px 20px' : '80px 64px' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '64px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: isMobile ? '32px' : '64px',
           alignItems: 'center',
           maxWidth: '1200px',
           margin: '0 auto',
@@ -1976,7 +1933,7 @@ export default function Clone() {
       {/* ============================================
           NGO PARTNERS SECTION
           ============================================ */}
-      <section style={{ background: '#cfeafc', padding: '80px 64px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: '#cfeafc', padding: isMobile ? '48px 20px' : '80px 64px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'relative', zIndex: 1 }}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -2047,7 +2004,7 @@ export default function Clone() {
       {/* ============================================
           MANIFESTO SECTION
           ============================================ */}
-      <section style={{ background: '#0a0a0a', padding: '100px 64px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: '#0a0a0a', padding: isMobile ? '60px 20px 48px' : '100px 64px', position: 'relative', overflow: 'hidden' }}>
         {/* Starfield dot particles */}
         <svg
           viewBox="0 0 1000 1000"
@@ -2211,11 +2168,11 @@ export default function Clone() {
       {/* ============================================
           FOOTER
           ============================================ */}
-      <footer id="footer" style={{ background: '#0a0a0a', padding: '64px 64px 40px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <footer id="footer" style={{ background: '#0a0a0a', padding: isMobile ? '40px 24px 32px' : '64px 64px 40px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '48px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
+          gap: isMobile ? '32px' : '48px',
           marginBottom: '64px',
         }}>
           {/* Col 1 — Brand + CTA */}

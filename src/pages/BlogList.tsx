@@ -1,4 +1,14 @@
 import { useState, useEffect } from 'react'
+// responsive hook
+function useIsMobile(bp = 768) {
+  const [m, setM] = useState(() => window.innerWidth < bp)
+  useEffect(() => {
+    const h = () => setM(window.innerWidth < bp)
+    window.addEventListener('resize', h, { passive: true })
+    return () => window.removeEventListener('resize', h)
+  }, [bp])
+  return m
+}
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { supabase, type Blog } from '../lib/supabase'
@@ -45,6 +55,7 @@ function InstagramIcon({ size = 14 }: { size?: number }) {
 export default function BlogList() {
   const [blogs, setBlogs] = useState<Blog[]>([])
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     supabase
@@ -67,8 +78,8 @@ export default function BlogList() {
           background: '#ffffff',
           paddingTop: '120px',
           paddingBottom: '72px',
-          paddingLeft: '64px',
-          paddingRight: '64px',
+          paddingLeft: isMobile ? '20px' : '64px',
+          paddingRight: isMobile ? '20px' : '64px',
           borderBottom: '1px solid rgba(0,0,0,0.06)',
         }}
       >
@@ -133,12 +144,12 @@ export default function BlogList() {
       </section>
 
       {/* ── Blog Grid ── */}
-      <section style={{ padding: '60px 64px 100px' }}>
+      <section style={{ padding: isMobile ? '32px 16px 60px' : '60px 64px 100px' }}>
         {loading ? (
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: '24px',
             }}
           >
@@ -150,7 +161,7 @@ export default function BlogList() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: '28px',
             }}
           >
@@ -223,13 +234,14 @@ export default function BlogList() {
 
                     {/* Card body */}
                     <div style={{ padding: '24px' }}>
-                      {/* Instagram badge */}
+                      {/* Instagram badge — use button to avoid nested <a> inside <Link> */}
                       {blog.author_instagram && (
-                        <a
-                          href={`https://instagram.com/${blog.author_instagram.replace('@', '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
+                        <button
+                          onClick={e => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            window.open(`https://instagram.com/${blog.author_instagram!.replace('@', '')}`, '_blank', 'noopener,noreferrer')
+                          }}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -241,7 +253,7 @@ export default function BlogList() {
                             fontSize: '11px',
                             fontFamily: "'Neutral Face Regular', sans-serif",
                             color: '#3e8bc2',
-                            textDecoration: 'none',
+                            cursor: 'pointer',
                             marginBottom: '14px',
                             transition: 'background 0.2s',
                           }}
@@ -250,7 +262,7 @@ export default function BlogList() {
                         >
                           <InstagramIcon size={11} />
                           {blog.author_instagram}
-                        </a>
+                        </button>
                       )}
 
                       {/* Title */}
