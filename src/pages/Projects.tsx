@@ -42,6 +42,7 @@ function formatDate(iso: string | null) {
 
 function getProjectImage(project: WelfareProject): string {
   if (project.main_image) return project.main_image
+  if (project.image_1) return project.image_1
   return `/images/initiative-${(project.id % 43) + 1}.png`
 }
 
@@ -133,7 +134,7 @@ export default function Projects() {
   useEffect(() => {
     supabase
       .from('welfare_projects')
-      .select('id,slug,is_draft,header,featured,location,key_statistic,workshop_date,objective,volunteers,google_drive_link,status,short_summary,collab_name,collab_logo,main_image,main_image_alt')
+      .select('id,slug,is_draft,header,featured,location,key_statistic,workshop_date,objective,volunteers,google_drive_link,status,short_summary,collab_name,collab_logo,main_image,main_image_alt,image_1')
       .eq('is_draft', false)
       .order('workshop_date', { ascending: false })
       .then(({ data, error }) => {
@@ -490,7 +491,11 @@ export default function Projects() {
                           }}
                           onError={e => {
                             const img = e.target as HTMLImageElement
-                            img.src = `/images/initiative-${(project.id % 43) + 1}.png`
+                            if (project.image_1 && img.src !== project.image_1) {
+                              img.src = project.image_1
+                            } else {
+                              img.src = `/images/initiative-${(project.id % 43) + 1}.png`
+                            }
                           }}
                         />
                         {/* Collab badge */}

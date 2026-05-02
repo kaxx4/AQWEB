@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { supabase, type WelfareProject } from '../lib/supabase'
 import Nav from '../components/Nav'
 import Footer from '../components/Footer'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const objectiveColor: Record<string, string> = {
   Workshop: '#3e8bc2',
@@ -28,6 +29,7 @@ function formatDate(iso: string | null) {
 
 function getProjectImage(project: WelfareProject): string {
   if (project.main_image) return project.main_image
+  if (project.image_1) return project.image_1
   return `/images/initiative-${(project.id % 43) + 1}.png`
 }
 
@@ -61,6 +63,7 @@ export default function ProjectDetail() {
   const [related, setRelated] = useState<WelfareProject[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!slug) return
@@ -207,7 +210,7 @@ export default function ProjectDetail() {
         )}
 
         {/* Content over image */}
-        <div style={{ position: 'relative', zIndex: 5, padding: '60px 64px 60px', maxWidth: '1100px' }}>
+        <div style={{ position: 'relative', zIndex: 5, padding: isMobile ? '40px 20px 40px' : '60px 64px 60px', maxWidth: '1100px' }}>
           <Link
             to="/projects"
             style={{
@@ -329,7 +332,7 @@ export default function ProjectDetail() {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
-        style={{ padding: '60px 64px', maxWidth: '1100px', margin: '0 auto' }}
+        style={{ padding: isMobile ? '32px 20px' : '60px 64px', maxWidth: '1100px', margin: '0 auto' }}
       >
         {/* Key stat */}
         {project.key_statistic && (
@@ -366,16 +369,15 @@ export default function ProjectDetail() {
               About this project
             </h2>
             <div
+              className="project-content"
               style={{
                 fontFamily: "'Neutral Face Regular', sans-serif",
                 fontSize: '16px',
                 color: 'rgba(247,245,240,0.7)',
                 lineHeight: '1.75',
-                whiteSpace: 'pre-wrap',
               }}
-            >
-              {project.long_writeup || project.content}
-            </div>
+              dangerouslySetInnerHTML={{ __html: project.long_writeup || project.content || '' }}
+            />
           </motion.div>
         )}
 
@@ -408,7 +410,7 @@ export default function ProjectDetail() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
                 gap: '16px',
               }}
             >
@@ -475,7 +477,7 @@ export default function ProjectDetail() {
 
       {/* ── Related projects ── */}
       {related.length > 0 && (
-        <section style={{ padding: '60px 64px 80px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <section style={{ padding: isMobile ? '40px 20px 60px' : '60px 64px 80px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -485,7 +487,7 @@ export default function ProjectDetail() {
             <h2 style={{ fontFamily: "'Neutral Face Bold', sans-serif", fontWeight: 700, fontSize: '24px', color: '#f7f5f0', margin: '0 0 32px', textWrap: 'balance' } as React.CSSProperties}>
               More {project.objective} projects
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
               {related.map(rel => (
                 <Link key={rel.id} to={`/projects/${rel.slug}`} style={{ textDecoration: 'none' }}>
                   <div
